@@ -64,6 +64,7 @@ export type World = {
   turnIndex: number
   log: LogEntry[]
   rng: RngState
+  revealed: boolean
   run: {
     depth: number
     cards: RunCards
@@ -80,3 +81,6 @@ export type Action =
   | { type: 'SetHeroIntent'; intent: HeroIntent | null }
   | { type: 'SetHeroPath'; path: Pos[] }
   | { type: 'Descend' }
+  | { type: 'PlayCard'; cardId: string; targetId?: ActorId }
+  | { type: 'OfferCardReward'; choices: string[] }
+  | { type: 'PickCardReward'; cardId: string }

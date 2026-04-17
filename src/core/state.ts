@@ -98,6 +98,7 @@ export function createInitialWorld(seed: string): World {
     turnIndex: 0,
     log: [],
     rng,
+    revealed: false,
     run: {
       depth: 1,
       cards: {

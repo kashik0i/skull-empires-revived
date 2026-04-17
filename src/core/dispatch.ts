@@ -67,6 +67,9 @@ function publishDiff(prev: World, next: World, action: Action, bus: FxBus): void
     case 'SetHeroIntent':
     case 'SetHeroPath':
     case 'Descend':
+    case 'PlayCard':
+    case 'OfferCardReward':
+    case 'PickCardReward':
       return
   }
 }
@@ -90,5 +93,8 @@ function describeAction(action: Action, state: World): string {
       : 'hero intent: cleared'
     case 'SetHeroPath': return `hero path: ${action.path.length} step(s)`
     case 'Descend': return `descended to depth ${state.run.depth}`
+    case 'PlayCard': return `played card ${action.cardId}`
+    case 'OfferCardReward': return `offered card reward: ${action.choices.join(', ')}`
+    case 'PickCardReward': return `picked card reward: ${action.cardId}`
   }
 }

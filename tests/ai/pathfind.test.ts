@@ -21,6 +21,7 @@ function emptyWorld(w: number, h: number) {
     turnIndex: 0,
     log: [],
     rng: createRng('x'),
+    revealed: false,
     run: {
       depth: 1,
       cards: { deck: [], hand: [], discard: [] },

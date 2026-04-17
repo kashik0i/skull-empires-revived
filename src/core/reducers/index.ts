@@ -5,6 +5,7 @@ import { turnAdvance } from './turn'
 import { runEnd, restart } from './run'
 import { setHeroIntent, setHeroPath } from './intent'
 import { descend } from './descend'
+import { playCard, offerCardReward, pickCardReward } from './card'
 
 export function rootReducer(state: World, action: Action): World {
   switch (action.type) {
@@ -16,6 +17,9 @@ export function rootReducer(state: World, action: Action): World {
     case 'SetHeroIntent': return setHeroIntent(state, action)
     case 'SetHeroPath': return setHeroPath(state, action)
     case 'Descend': return descend(state)
+    case 'PlayCard': return playCard(state, action)
+    case 'OfferCardReward': return offerCardReward(state, action)
+    case 'PickCardReward': return pickCardReward(state, action)
     default: return state
   }
 }

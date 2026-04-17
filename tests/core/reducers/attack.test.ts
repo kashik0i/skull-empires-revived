@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test'
 import { createInitialWorld } from '../../../src/core/state'
 import { rootReducer } from '../../../src/core/reducers'
-import type { World, Action } from '../../../src/core/types'
+import type { World, Action, StatusEffect } from '../../../src/core/types'
 
 function placeEnemyNextToHero(w: World): { world: World; enemyId: string } {
   const hero = w.actors[w.heroId]
@@ -46,5 +46,83 @@ describe('AttackActor reducer', () => {
     const action: Action = { type: 'AttackActor', attackerId: w.heroId, targetId: enemyId }
     const w2 = rootReducer(w, action)
     expect(w2).toBe(w)
+  })
+
+  it('hero with buff-atk +2 status deals extra 2 damage vs baseline', () => {
+    const base = createInitialWorld('attack-buffatk')
+    const { world: w, enemyId } = placeEnemyNextToHero(base)
+    const action: Action = { type: 'AttackActor', attackerId: w.heroId, targetId: enemyId }
+
+    // Baseline damage without buff
+    const w2baseline = rootReducer(w, action)
+    const baselineDamage = w.actors[enemyId].hp - w2baseline.actors[enemyId].hp
+
+    // Apply buff-atk +2 to hero
+    const buffEffect: StatusEffect = { kind: 'buff-atk', amount: 2, remainingTicks: 10 }
+    const hero = w.actors[w.heroId]
+    const wBuffed: World = {
+      ...w,
+      actors: {
+        ...w.actors,
+        [w.heroId]: { ...hero, statusEffects: [buffEffect] },
+        // reset enemy hp
+        [enemyId]: { ...w.actors[enemyId] },
+      },
+    }
+    const w2buffed = rootReducer(wBuffed, action)
+    const buffedDamage = wBuffed.actors[enemyId].hp - w2buffed.actors[enemyId].hp
+
+    expect(buffedDamage).toBe(baselineDamage + 2)
+  })
+
+  it('enemy with debuff-def -1 takes extra 1 damage from hero', () => {
+    const base = createInitialWorld('attack-debuffdef')
+    const { world: w, enemyId } = placeEnemyNextToHero(base)
+    const action: Action = { type: 'AttackActor', attackerId: w.heroId, targetId: enemyId }
+
+    // Baseline damage without debuff
+    const w2baseline = rootReducer(w, action)
+    const baselineDamage = w.actors[enemyId].hp - w2baseline.actors[enemyId].hp
+
+    // Apply debuff-def -1 to enemy
+    const debuffEffect: StatusEffect = { kind: 'debuff-def', amount: 1, remainingTicks: 10 }
+    const enemy = w.actors[enemyId]
+    const wDebuffed: World = {
+      ...w,
+      actors: {
+        ...w.actors,
+        [enemyId]: { ...enemy, statusEffects: [debuffEffect] },
+      },
+    }
+    const w2debuffed = rootReducer(wDebuffed, action)
+    const debuffedDamage = wDebuffed.actors[enemyId].hp - w2debuffed.actors[enemyId].hp
+
+    expect(debuffedDamage).toBe(baselineDamage + 1)
+  })
+
+  it('stacking: two buff-atk +1 effects give +2 total damage', () => {
+    const base = createInitialWorld('attack-stackbuff')
+    const { world: w, enemyId } = placeEnemyNextToHero(base)
+    const action: Action = { type: 'AttackActor', attackerId: w.heroId, targetId: enemyId }
+
+    // Baseline
+    const w2baseline = rootReducer(w, action)
+    const baselineDamage = w.actors[enemyId].hp - w2baseline.actors[enemyId].hp
+
+    // Two buff-atk +1 effects on hero
+    const buff1: StatusEffect = { kind: 'buff-atk', amount: 1, remainingTicks: 5 }
+    const buff2: StatusEffect = { kind: 'buff-atk', amount: 1, remainingTicks: 5 }
+    const hero = w.actors[w.heroId]
+    const wStacked: World = {
+      ...w,
+      actors: {
+        ...w.actors,
+        [w.heroId]: { ...hero, statusEffects: [buff1, buff2] },
+      },
+    }
+    const w2stacked = rootReducer(wStacked, action)
+    const stackedDamage = wStacked.actors[enemyId].hp - w2stacked.actors[enemyId].hp
+
+    expect(stackedDamage).toBe(baselineDamage + 2)
   })
 })
