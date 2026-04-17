@@ -1,0 +1,7 @@
+.worktrees/
+node_modules/
+dist/
+.vite/
+*.log
+.DS_Store
+bun.lockb
