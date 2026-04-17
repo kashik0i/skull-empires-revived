@@ -5,6 +5,7 @@ import { renderWorld } from './render/world'
 import { mountHud } from './ui/hud'
 import { mountOverlay } from './ui/overlay'
 import { mountCardHand } from './ui/cardHand'
+import { mountCardReward } from './ui/cardReward'
 import { attachDevInput } from './input/dev'
 import { encodeRun, decodeRun } from './persistence/url'
 import { replay } from './persistence/replay'
@@ -88,6 +89,9 @@ function main(): void {
       cardHand.cancelTargeting()
     },
   )
+  const cardReward = mountCardReward(hudContainer, (cardId) => {
+    loop.submit({ type: 'PickCardReward', cardId })
+  })
   const devMenu = mountDevMenu(hudContainer, flags)
   attachDevMenuHotkey(devMenu)
 
@@ -112,6 +116,7 @@ function main(): void {
       fx.draw()
       hud.update(state)
       overlay.update(state)
+      cardReward.update(state)
       cardHand.update(state)
       devMenu.setFps(emaFps)
     },
