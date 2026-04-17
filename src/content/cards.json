@@ -1,0 +1,44 @@
+[
+  {
+    "id": "bless",
+    "name": "Blessing",
+    "description": "+2 ATK for 30 ticks",
+    "target": "self",
+    "effect": { "kind": "buff-atk", "amount": 2, "durationTicks": 30 }
+  },
+  {
+    "id": "heal",
+    "name": "Heal",
+    "description": "Restore 8 HP",
+    "target": "self",
+    "effect": { "kind": "heal", "amount": 8 }
+  },
+  {
+    "id": "storm",
+    "name": "Storm",
+    "description": "Deal 4 damage to all enemies on floor",
+    "target": "none",
+    "effect": { "kind": "aoe-damage", "amount": 4 }
+  },
+  {
+    "id": "reveal-map",
+    "name": "Reveal",
+    "description": "Reveal the entire floor map",
+    "target": "none",
+    "effect": { "kind": "reveal" }
+  },
+  {
+    "id": "curse",
+    "name": "Curse",
+    "description": "-1 DEF on target enemy for 20 ticks",
+    "target": "enemy",
+    "effect": { "kind": "debuff-def", "amount": 1, "durationTicks": 20 }
+  },
+  {
+    "id": "smite",
+    "name": "Smite",
+    "description": "Deal 12 damage to target enemy",
+    "target": "enemy",
+    "effect": { "kind": "direct-damage", "amount": 12 }
+  }
+]
