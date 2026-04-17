@@ -37,13 +37,19 @@ export type Floor = {
   spawns: Pos[]
 }
 
-export type Phase = 'exploring' | 'run_won' | 'run_lost'
+export type Phase = 'exploring' | 'card_reward' | 'run_won' | 'run_lost'
 
 export type LogEntry = { tick: number; text: string }
 
 export type HeroIntent =
   | { kind: 'move-to'; goal: Pos }
   | { kind: 'attack'; targetId: ActorId }
+
+export type RunCards = {
+  deck: string[]
+  hand: string[]
+  discard: string[]
+}
 
 export type World = {
   seed: string
@@ -58,6 +64,11 @@ export type World = {
   turnIndex: number
   log: LogEntry[]
   rng: RngState
+  run: {
+    depth: number
+    cards: RunCards
+    pendingReward: null | { choices: string[] }
+  }
 }
 
 export type Action =
@@ -68,3 +79,4 @@ export type Action =
   | { type: 'Restart'; seed: string }
   | { type: 'SetHeroIntent'; intent: HeroIntent | null }
   | { type: 'SetHeroPath'; path: Pos[] }
+  | { type: 'Descend' }
