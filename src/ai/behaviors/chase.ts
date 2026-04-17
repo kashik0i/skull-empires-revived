@@ -17,16 +17,23 @@ function manhattan(a: Pos, b: Pos): number {
 }
 
 function greedyStep(state: World, from: Pos, to: Pos, self: ActorId): Pos | null {
-  const candidates: Pos[] = []
-  if (to.x !== from.x) candidates.push({ x: from.x + Math.sign(to.x - from.x), y: from.y })
-  if (to.y !== from.y) candidates.push({ x: from.x, y: from.y + Math.sign(to.y - from.y) })
-  for (const p of candidates) {
-    if (!inBounds(state, p)) continue
-    if (state.floor.tiles[p.y * state.floor.width + p.x] !== Tile.Floor) continue
-    if (isOccupied(state, p, self)) continue
-    return p
-  }
-  return null
+  const currentDist = manhattan(from, to)
+  const neighbors: Pos[] = [
+    { x: from.x + 1, y: from.y },
+    { x: from.x - 1, y: from.y },
+    { x: from.x, y: from.y + 1 },
+    { x: from.x, y: from.y - 1 },
+  ]
+  const passable = neighbors.filter(p =>
+    inBounds(state, p) &&
+    state.floor.tiles[p.y * state.floor.width + p.x] === Tile.Floor &&
+    !isOccupied(state, p, self)
+  )
+  const scored = passable
+    .map(p => ({ p, d: manhattan(p, to) }))
+    .filter(c => c.d <= currentDist + 1)
+    .sort((a, b) => a.d - b.d)
+  return scored[0]?.p ?? null
 }
 
 function inBounds(state: World, p: Pos): boolean {
