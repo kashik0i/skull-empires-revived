@@ -10,7 +10,7 @@ export type CardHand = {
 
 export function mountCardHand(
   parent: HTMLElement,
-  onPlay: (cardId: string, targetId?: number) => void,
+  onPlay: (cardId: string, targetId?: string) => void,
   onTargetSelectStart: () => void,
   onTargetSelectCancel: () => void,
 ): CardHand {

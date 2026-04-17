@@ -4,6 +4,7 @@ import { intentForClick } from './input/intent'
 import { renderWorld } from './render/world'
 import { mountHud } from './ui/hud'
 import { mountOverlay } from './ui/overlay'
+import { mountCardHand } from './ui/cardHand'
 import { attachDevInput } from './input/dev'
 import { encodeRun, decodeRun } from './persistence/url'
 import { replay } from './persistence/replay'
@@ -68,6 +69,25 @@ function main(): void {
 
   const hud = mountHud(hudContainer)
   const overlay = mountOverlay(hudContainer)
+  let targetingCardId: string | null = null
+  const cardHand = mountCardHand(
+    hudContainer,
+    (cardId, targetId) => {
+      targetingCardId = null
+      if (targetId) {
+        loop.submit({ type: 'PlayCard', cardId, targetId })
+      } else {
+        loop.submit({ type: 'PlayCard', cardId })
+      }
+    },
+    () => {
+      targetingCardId = cardHand.getTargetingCardId()
+    },
+    () => {
+      targetingCardId = null
+      cardHand.cancelTargeting()
+    },
+  )
   const devMenu = mountDevMenu(hudContainer, flags)
   attachDevMenuHotkey(devMenu)
 
@@ -92,6 +112,7 @@ function main(): void {
       fx.draw()
       hud.update(state)
       overlay.update(state)
+      cardHand.update(state)
       devMenu.setFps(emaFps)
     },
     { enemyTickMs: () => flags.get().slowMotion ? SLOW_TICK_MS : FAST_TICK_MS },
@@ -103,6 +124,20 @@ function main(): void {
     onTileClick(tile) {
       const s = loop.getState()
       if (s.phase !== 'exploring') return
+      // If targeting mode is active, try to play card on enemy at tile
+      if (targetingCardId) {
+        const actor = Object.values(s.actors).find(a => a.pos.x === tile.x && a.pos.y === tile.y && a.kind === 'enemy')
+        if (actor) {
+          loop.submit({ type: 'PlayCard', cardId: targetingCardId, targetId: actor.id })
+          targetingCardId = null
+          cardHand.cancelTargeting()
+        } else {
+          // Cancel targeting if not on enemy
+          targetingCardId = null
+          cardHand.cancelTargeting()
+        }
+        return
+      }
       const action = intentForClick(s, tile)
       if (action) loop.submit(action)
     },
