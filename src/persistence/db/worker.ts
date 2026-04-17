@@ -3,6 +3,7 @@
 // Worker tested via runtime smoke in src/main.ts integration — no unit test here due to environment limits.
 
 import sqlite3InitModule, { type Database } from '@sqlite.org/sqlite-wasm'
+import schemaSql from './schema.sql?raw'
 
 // ---------------------------------------------------------------------------
 // Message types
@@ -33,32 +34,6 @@ export type WorkerResp =
       }
     }
   | { kind: 'error'; message: string; reqId?: number }
-
-// ---------------------------------------------------------------------------
-// Inline schema (schema.sql is the human-readable reference)
-// ---------------------------------------------------------------------------
-
-const SCHEMA_SQL = `
-CREATE TABLE IF NOT EXISTS runs (
-  id TEXT PRIMARY KEY,
-  seed TEXT NOT NULL,
-  started_at INTEGER NOT NULL,
-  ended_at INTEGER,
-  outcome TEXT,
-  final_tick INTEGER
-);
-
-CREATE TABLE IF NOT EXISTS run_events (
-  run_id TEXT NOT NULL,
-  idx INTEGER NOT NULL,
-  tick INTEGER NOT NULL,
-  action_json TEXT NOT NULL,
-  PRIMARY KEY (run_id, idx),
-  FOREIGN KEY (run_id) REFERENCES runs(id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_run_events_run ON run_events(run_id, idx);
-`
 
 // ---------------------------------------------------------------------------
 // Helper: only include reqId key when it is actually defined
@@ -98,7 +73,7 @@ async function init(): Promise<void> {
     db = new sqlite3.oo1.DB(':memory:', 'cw')
   }
 
-  db.exec(SCHEMA_SQL)
+  db.exec(schemaSql)
 
   const ready: WorkerResp = { kind: 'ready' }
   self.postMessage(ready)
