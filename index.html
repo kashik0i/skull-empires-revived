@@ -4,17 +4,30 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Skull Empires Revived</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" />
     <style>
-      html, body { margin: 0; height: 100%; background: #120a1c; color: #e8d9f7; font-family: ui-serif, Georgia, serif; }
+      :root {
+        --bone: #eadbc0;
+        --deep: #2a1a3e;
+        --deep-dark: #1a1024;
+        --amber: #f0b770;
+        --void: #0b0612;
+      }
+      html, body { margin: 0; height: 100%; background: var(--void); color: var(--bone); font-family: 'UnifrakturMaguntia', ui-serif, Georgia, serif; }
       #stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
-      #world { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
-      #hud { position: absolute; inset: 0; pointer-events: none; }
+      #world, #fx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      #world { z-index: 1; image-rendering: pixelated; }
+      #fx    { z-index: 2; pointer-events: none; }
+      #hud   { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
       #hud > * { pointer-events: auto; }
     </style>
   </head>
   <body>
     <div id="stage">
       <canvas id="world" width="960" height="640"></canvas>
+      <canvas id="fx"    width="960" height="640"></canvas>
       <div id="hud"></div>
     </div>
     <script type="module" src="/src/main.ts"></script>
