@@ -27,5 +27,20 @@
       "head":   { "type": "circle", "y": -0.4, "r": 0.22, "color": "boneWhite" },
       "eyes":   { "type": "eyeDots", "y": -0.42, "spacing": 0.1, "r": 0.03, "color": "obsidianBlack" }
     }
+  },
+  "skull-emperor": {
+    "kind": "enemy",
+    "name": "Skull Emperor",
+    "hp": 30,
+    "atk": 6,
+    "def": 2,
+    "color": "bloodCrimson",
+    "behavior": "chase",
+    "shape": {
+      "body":   { "type": "rect", "w": 0.75, "h": 0.9, "color": "bloodCrimson", "corner": 0.15 },
+      "accent": { "type": "strip", "y": 0.4, "h": 0.1, "color": "silkFlameAmber" },
+      "head":   { "type": "circle", "y": -0.45, "r": 0.3, "color": "boneWhite" },
+      "eyes":   { "type": "eyeDots", "y": -0.45, "spacing": 0.13, "r": 0.05, "color": "bloodCrimson" }
+    }
   }
 }

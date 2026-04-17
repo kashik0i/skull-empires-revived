@@ -1,6 +1,6 @@
 # Skull Empires Revived
 
-Browser-based, director-style roguelike. Phase 1A ships the playable core (one floor, one enemy archetype, win/lose, deterministic replay).
+Browser-based, director-style roguelike. Five floors, cards, a throne-room boss, deterministic replay, and auto-resume after refresh.
 
 ## Develop
 
@@ -8,7 +8,7 @@ Requires Bun 1.1+.
 
 ```
 bun install
-bun x vite
+bun run dev
 ```
 
 Open http://localhost:5173/?dev=1.
@@ -17,17 +17,19 @@ Open http://localhost:5173/?dev=1.
 
 ```
 bun test
-bun x tsc --noEmit
+bun run typecheck
 ```
 
-## Controls (Phase 1A, dev mode)
+## Controls
 
-- **Left-click** an adjacent floor tile — move.
-- **Left-click** an adjacent enemy — attack.
+- **Left-click** a floor tile — hero auto-paths there.
+- **Left-click** an enemy — hero paths adjacent and attacks.
+- **Descend ↓** button (HUD) — appears when standing on a stairs tile; advances a floor.
+- **Card buttons** (bottom-center) — click to play; enemy-target cards enter targeting mode, then click an enemy.
+- **Card reward modal** — appears between floors; pick one to add to your deck.
 - **R** — new run (fresh seed).
-- **Share URL** button on the end-of-run overlay — copy a URL that replays this run.
-
-Gestures, voice, cards, dialog, multi-floor, boss, and FX ship in 1B–1E.
+- **Backtick (`` ` ``)** — toggle dev menu.
+- **Share URL** — end-of-run overlay, copies a replay URL.
 
 ## Architecture
 
@@ -48,3 +50,15 @@ Core principle: pure-TS core, adapter layers are thin, action log is truth.
 **Audio:** 5 CC0 clips in `public/audio/` (sourcing guide in that folder's README). Game is silent-but-playable if files absent.
 
 **Font:** UnifrakturMaguntia via Google Fonts runtime `<link>`.
+
+## Phase 1C — Multi-floor, cards, boss, persistence
+
+Spec: `docs/plans/2026-04-17-phase-1c-design.md`. Plan: `docs/plans/2026-04-17-phase-1c-plan.md`.
+
+- **Camera** — `render/camera.ts` centers the viewport on the hero; mouse clicks are mapped back through the same offset.
+- **Multi-floor** — `Tile.Stairs`, `Descend` action, 5 floors per run.
+- **Boss floor** (depth 5) — throne-room layout, one Skull Emperor + two bone-knight escorts. Reach it by descending from floor 4; kill-all ends the run.
+- **Cards** — 6 starter cards (`Blessing`, `Heal`, `Guard`, `Smite`, `Curse`, `Storm`). Start with 3 in hand. Kill-all on non-boss floors offers a 3-card reward; pick one to add to your deck.
+- **Status effects** — `buff-atk` / `buff-def` / `debuff-def` modify attack/defense math; tick down on each `TurnAdvance` and purge at zero.
+- **Persistence** — SQLite-WASM in a Web Worker, backed by OPFS. Auto-resumes an in-progress run on boot (URL param overrides DB). Requires cross-origin isolation headers (set in `vite.config.ts`).
+- **Dev menu** (backtick) — volume slider, `slowMotion`, `pauseEnemies`, `invincibleHero`, `showFps`, `showHeroPath`. `revealMap` exists for future fog-of-war work.

@@ -50,6 +50,38 @@ export function spawnEnemiesOnFloor(
   return actors
 }
 
+/** Boss floor spawn: index 1 = skull-emperor boss, 2..3 = bone-knight escorts. */
+export function spawnBossEncounter(
+  spawns: Floor['spawns'],
+  idOffset: number,
+): Record<ActorId, Actor> {
+  const actors: Record<ActorId, Actor> = {}
+  const build = (archetype: string, pos: Floor['spawns'][number], id: ActorId): Actor => {
+    const def = getArchetype(archetype)
+    return {
+      id,
+      kind: 'enemy',
+      archetype,
+      pos,
+      hp: def.hp,
+      maxHp: def.hp,
+      atk: def.atk,
+      def: def.def,
+      alive: true,
+      statusEffects: [],
+    }
+  }
+  if (spawns[1]) {
+    const id = `boss-${idOffset}`
+    actors[id] = build('skull-emperor', spawns[1], id)
+  }
+  for (let i = 2; i < Math.min(spawns.length, 4); i++) {
+    const id = `enemy-${idOffset + i}`
+    actors[id] = build('bone-knight', spawns[i], id)
+  }
+  return actors
+}
+
 export function createInitialWorld(seed: string): World {
   let rng = createRng(seed)
   const { floor, rng: rng2 } = generateFloor(rng, FLOOR_W, FLOOR_H)

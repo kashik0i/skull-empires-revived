@@ -1,7 +1,8 @@
 import type { World } from '../types'
 import { Tile } from '../types'
 import { generateFloor } from '../../procgen/floor'
-import { spawnEnemiesOnFloor } from '../state'
+import { generateBossFloor } from '../../procgen/boss'
+import { spawnEnemiesOnFloor, spawnBossEncounter } from '../state'
 import type { ActorId, Actor } from '../types'
 
 export function descend(world: World): World {
@@ -19,14 +20,11 @@ export function descend(world: World): World {
   if (world.run.depth >= 5) return world
 
   const newDepth = world.run.depth + 1
-  const hasStairs = newDepth < 5
+  const isBossFloor = newDepth === 5
 
-  const { floor: newFloor, rng: rng2 } = generateFloor(
-    world.rng,
-    floor.width,
-    floor.height,
-    { hasStairs },
-  )
+  const { floor: newFloor, rng: rng2 } = isBossFloor
+    ? generateBossFloor(world.rng, floor.width, floor.height)
+    : generateFloor(world.rng, floor.width, floor.height, { hasStairs: true })
 
   const newSpawns = newFloor.spawns
   const heroSpawn = newSpawns[0]
@@ -41,7 +39,9 @@ export function descend(world: World): World {
 
   // Use a stable id offset based on depth so ids don't collide across floors
   const idOffset = (newDepth - 1) * 10 + 1
-  const enemies = spawnEnemiesOnFloor(newSpawns, idOffset)
+  const enemies = isBossFloor
+    ? spawnBossEncounter(newSpawns, idOffset)
+    : spawnEnemiesOnFloor(newSpawns, idOffset)
   Object.assign(actors, enemies)
 
   const turnOrder = Object.keys(actors)
