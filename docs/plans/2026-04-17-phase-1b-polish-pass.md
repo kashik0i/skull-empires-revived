@@ -17,7 +17,7 @@ Win criterion: a screen recording of a 30-second run looks recognisably like a d
 - Smooth movement (tween slide between tiles, 150ms ease-out-cubic)
 - Attack lunge + recoil (80ms each way, no state change, purely visual)
 - Death fade-scale + skull-white particle spew
-- Hit flash (1-frame white overlay on damaged actor)
+- Hit flash (brief white overlay on damaged actor, 120ms fade)
 - Floating damage numbers (red text, rises + fades over 600ms)
 - Screen shake on hero damage (3px amplitude, 100ms)
 - Card-play flash preset (wired now, triggered by card action in 1C)
@@ -117,7 +117,7 @@ Events are pushed to a queue on dispatch. Each RAF frame, FX subsystem drains th
 | `render/shape.ts` | `drawShape(ctx, recipe, x, y, palette)` — procedural actor renderer | yes |
 | `render/world.ts` | (refactor) consume DisplayState + shape recipes instead of drawing circles | depends on display + shape |
 | `render/fx/bus.ts` | Event queue + subscribe + publish | yes (standalone) |
-| `render/fx/canvas.ts` | Second canvas bootstrap + RAF loop dispatching to presets | depends on bus |
+| `render/fx/canvas.ts` | Second canvas bootstrap + `tickFx(dt, state, displayState)` called from the main RAF loop; drains bus + dispatches to presets + draws particles & flashes | depends on bus |
 | `render/fx/tweens.ts` | `ease()` functions + `lerp()` + tween manager (for non-movement tweens like damage-number rise) | yes |
 | `render/fx/particles.ts` | Pool (cap 500) + emitter preset spec + update/draw | yes |
 | `render/fx/presets.ts` | Named responses to events: `hitFlash`, `deathSpew`, `attackLunge`, `damageFloat`, `cardPlay`, `screenShake` | depends on particles + tweens |
@@ -183,7 +183,7 @@ Coordinates are fractions of tile size (24px) centered on the tile. Color names 
 | Preset | Trigger | Behavior |
 |---|---|---|
 | **attackLunge** | `attacked` | Sets attacker's DisplayActor into lunge mode: 80ms toward `targetPos` (overshoot 30% past the midpoint), 80ms recoil. Actor state pos unchanged. |
-| **hitFlash** | `damaged` | 1-frame bone-white overlay on target actor (re-tint shape recipe for 120ms, fade out). Bypasses world canvas — drawn on FX canvas at actor display pos. |
+| **hitFlash** | `damaged` | Bone-white overlay on target actor's shape: tint + fade over 120ms. Drawn on FX canvas at event `pos` (glued to hit location, not to the actor's later tween). |
 | **damageFloat** | `damaged` | Spawns a text tween on FX canvas: red number rises 18px over 600ms, fades 0 → 1 → 0 alpha. Font: UnifrakturMaguntia bold 14px. |
 | **deathSpew** | `died` | Spawns 12 particles at actor pos, boneWhite + ironGray mix, radial outward velocity, 700ms life with gravity+fade. Removes actor display entry. |
 | **screenShake** | `damaged` where `isHero === true` | Offsets both canvases by `sin(t * freq) * amplitude` for 100ms. Amplitude 3px, freq 40Hz. |
