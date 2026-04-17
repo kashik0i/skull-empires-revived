@@ -4,12 +4,20 @@ export type Flags = {
   showFps: boolean
   slowMotion: boolean
   showHeroPath: boolean
+  pauseEnemies: boolean
+  invincibleHero: boolean
+  revealMap: boolean
+  volume: number
 }
 
 const DEFAULTS: Flags = {
   showFps: false,
   slowMotion: false,
   showHeroPath: false,
+  pauseEnemies: false,
+  invincibleHero: false,
+  revealMap: false,
+  volume: 0.5,
 }
 
 export type FlagStore = {
@@ -18,14 +26,25 @@ export type FlagStore = {
   subscribe(cb: (flags: Flags) => void): () => void
 }
 
+function clampVolume(v: number): number {
+  if (Number.isNaN(v)) return 0
+  if (v < 0) return 0
+  if (v > 1) return 1
+  return v
+}
+
 export function createFlags(): FlagStore {
   let flags: Flags = { ...DEFAULTS, ...loadFromStorage() }
   const subs: ((f: Flags) => void)[] = []
   return {
     get() { return flags },
     set(key, value) {
-      if (flags[key] === value) return
-      flags = { ...flags, [key]: value }
+      let nextValue: Flags[typeof key] = value
+      if (key === 'volume') {
+        nextValue = clampVolume(value as number) as Flags[typeof key]
+      }
+      if (flags[key] === nextValue) return
+      flags = { ...flags, [key]: nextValue }
       save(flags)
       for (const cb of subs) cb(flags)
     },
@@ -46,7 +65,17 @@ function loadFromStorage(): Partial<Flags> {
     const parsed = JSON.parse(raw) as Record<string, unknown>
     const valid: Partial<Flags> = {}
     for (const key of Object.keys(DEFAULTS) as (keyof Flags)[]) {
-      if (typeof parsed[key] === 'boolean') valid[key] = parsed[key] as boolean
+      const defaultValue = DEFAULTS[key]
+      const incoming = parsed[key]
+      if (typeof defaultValue === 'boolean' && typeof incoming === 'boolean') {
+        (valid as Record<string, unknown>)[key] = incoming
+      } else if (typeof defaultValue === 'number' && typeof incoming === 'number') {
+        if (key === 'volume') {
+          (valid as Record<string, unknown>)[key] = clampVolume(incoming)
+        } else {
+          (valid as Record<string, unknown>)[key] = incoming
+        }
+      }
     }
     return valid
   } catch {

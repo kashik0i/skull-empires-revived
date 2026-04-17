@@ -3,14 +3,15 @@ import { createFlags } from '../../src/dev/flags'
 
 const g = globalThis as Record<string, unknown>
 let oldLocalStorage: unknown
+let storage: Map<string, string>
 
 beforeEach(() => {
   oldLocalStorage = g.localStorage
-  const store = new Map<string, string>()
+  storage = new Map<string, string>()
   g.localStorage = {
-    getItem: (k: string) => store.get(k) ?? null,
-    setItem: (k: string, v: string) => { store.set(k, v) },
-    removeItem: (k: string) => { store.delete(k) },
+    getItem: (k: string) => storage.get(k) ?? null,
+    setItem: (k: string, v: string) => { storage.set(k, v) },
+    removeItem: (k: string) => { storage.delete(k) },
   }
 })
 
@@ -19,9 +20,17 @@ afterEach(() => {
 })
 
 describe('flag store', () => {
-  it('starts with all-false defaults', () => {
+  it('starts with documented defaults', () => {
     const flags = createFlags()
-    expect(flags.get()).toEqual({ showFps: false, slowMotion: false, showHeroPath: false })
+    expect(flags.get()).toEqual({
+      showFps: false,
+      slowMotion: false,
+      showHeroPath: false,
+      pauseEnemies: false,
+      invincibleHero: false,
+      revealMap: false,
+      volume: 0.5,
+    })
   })
 
   it('set updates a flag and notifies subscribers', () => {
@@ -57,5 +66,55 @@ describe('flag store', () => {
     off()
     flags.set('showFps', false)
     expect(calls).toBe(1)
+  })
+
+  it('toggles pauseEnemies, invincibleHero, revealMap', () => {
+    const flags = createFlags()
+    flags.set('pauseEnemies', true)
+    flags.set('invincibleHero', true)
+    flags.set('revealMap', true)
+    expect(flags.get().pauseEnemies).toBe(true)
+    expect(flags.get().invincibleHero).toBe(true)
+    expect(flags.get().revealMap).toBe(true)
+    flags.set('pauseEnemies', false)
+    expect(flags.get().pauseEnemies).toBe(false)
+  })
+
+  it('clamps volume setter to [0, 1]', () => {
+    const flags = createFlags()
+    flags.set('volume', -0.5)
+    expect(flags.get().volume).toBe(0)
+    flags.set('volume', 2)
+    expect(flags.get().volume).toBe(1)
+    flags.set('volume', 0.75)
+    expect(flags.get().volume).toBe(0.75)
+  })
+
+  it('persists volume and boolean flags across re-create', () => {
+    const a = createFlags()
+    a.set('volume', 0.3)
+    a.set('invincibleHero', true)
+    const b = createFlags()
+    expect(b.get().volume).toBe(0.3)
+    expect(b.get().invincibleHero).toBe(true)
+  })
+
+  it('fills in defaults when localStorage payload is missing new fields', () => {
+    // Old shape: only the original three booleans.
+    storage.set('skull-empires.flags.v1', JSON.stringify({
+      showFps: true,
+      slowMotion: true,
+      showHeroPath: false,
+    }))
+    const flags = createFlags()
+    expect(flags.get()).toEqual({
+      showFps: true,
+      slowMotion: true,
+      showHeroPath: false,
+      pauseEnemies: false,
+      invincibleHero: false,
+      revealMap: false,
+      volume: 0.5,
+    })
   })
 })
