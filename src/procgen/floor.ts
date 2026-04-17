@@ -4,7 +4,15 @@ import { generateBsp } from './bsp'
 
 export type FloorResult = { floor: Floor; rng: RngState }
 
-export function generateFloor(rng: RngState, width: number, height: number): FloorResult {
+export type GenerateFloorOpts = { hasStairs?: boolean }
+
+export function generateFloor(
+  rng: RngState,
+  width: number,
+  height: number,
+  opts: GenerateFloorOpts = {},
+): FloorResult {
+  const hasStairs = opts.hasStairs ?? true
   const tiles = new Uint8Array(width * height)
   tiles.fill(Tile.Wall)
   const bsp = generateBsp(rng, width, height)
@@ -22,10 +30,17 @@ export function generateFloor(rng: RngState, width: number, height: number): Flo
       }
     }
   }
-  const spawns = bsp.rooms.map(r => ({
+  const roomCenters = bsp.rooms.map(r => ({
     x: r.x + Math.floor(r.w / 2),
     y: r.y + Math.floor(r.h / 2),
   }))
+  let spawns = roomCenters.slice()
+  if (hasStairs && bsp.rooms.length >= 2) {
+    const stairsRoomIndex = bsp.rooms.length - 1
+    const stairsPos = roomCenters[stairsRoomIndex]
+    tiles[stairsPos.y * width + stairsPos.x] = Tile.Stairs
+    spawns = roomCenters.filter((_, i) => i !== stairsRoomIndex)
+  }
   return {
     floor: { width, height, tiles, spawns },
     rng,

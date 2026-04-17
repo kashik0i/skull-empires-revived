@@ -24,7 +24,7 @@ describe('floor', () => {
             floor.tiles[y * floor.width + (x - 1)],
             floor.tiles[y * floor.width + (x + 1)],
           ]
-          const validTiles: number[] = [Tile.Floor, Tile.Wall]
+          const validTiles: number[] = [Tile.Floor, Tile.Wall, Tile.Stairs]
           for (const n of neighbours) {
             expect(validTiles).toContain(n)
           }
@@ -39,5 +39,37 @@ describe('floor', () => {
     for (const s of floor.spawns) {
       expect(floor.tiles[s.y * floor.width + s.x]).toBe(Tile.Floor)
     }
+  })
+
+  it('places exactly one stairs tile by default', () => {
+    const { floor } = generateFloor(createRng('floor-stairs-1'), 40, 30)
+    let stairsCount = 0
+    for (let i = 0; i < floor.tiles.length; i++) {
+      if (floor.tiles[i] === Tile.Stairs) stairsCount++
+    }
+    expect(stairsCount).toBe(1)
+  })
+
+  it('places stairs away from every spawn point', () => {
+    const { floor } = generateFloor(createRng('floor-stairs-2'), 40, 30)
+    let stairsIdx = -1
+    for (let i = 0; i < floor.tiles.length; i++) {
+      if (floor.tiles[i] === Tile.Stairs) { stairsIdx = i; break }
+    }
+    expect(stairsIdx).toBeGreaterThanOrEqual(0)
+    const sx = stairsIdx % floor.width
+    const sy = Math.floor(stairsIdx / floor.width)
+    for (const s of floor.spawns) {
+      expect(s.x === sx && s.y === sy).toBe(false)
+    }
+  })
+
+  it('skips stairs placement when hasStairs is false', () => {
+    const { floor } = generateFloor(createRng('floor-stairs-3'), 40, 30, { hasStairs: false })
+    let stairsCount = 0
+    for (let i = 0; i < floor.tiles.length; i++) {
+      if (floor.tiles[i] === Tile.Stairs) stairsCount++
+    }
+    expect(stairsCount).toBe(0)
   })
 })

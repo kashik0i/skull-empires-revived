@@ -6,10 +6,16 @@ export const Tile = {
   Void: 0,
   Floor: 1,
   Wall: 2,
+  Stairs: 3,
 } as const
 export type TileKind = (typeof Tile)[keyof typeof Tile]
 
 export type Pos = { x: number; y: number }
+
+export type StatusEffect =
+  | { kind: 'buff-atk'; amount: number; remainingTicks: number }
+  | { kind: 'buff-def'; amount: number; remainingTicks: number }
+  | { kind: 'debuff-def'; amount: number; remainingTicks: number }
 
 export type Actor = {
   id: ActorId
@@ -21,6 +27,7 @@ export type Actor = {
   atk: number
   def: number
   alive: boolean
+  statusEffects: StatusEffect[]
 }
 
 export type Floor = {
