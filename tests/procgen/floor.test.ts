@@ -24,8 +24,9 @@ describe('floor', () => {
             floor.tiles[y * floor.width + (x - 1)],
             floor.tiles[y * floor.width + (x + 1)],
           ]
+          const validTiles: number[] = [Tile.Floor, Tile.Wall]
           for (const n of neighbours) {
-            expect([Tile.Floor, Tile.Wall]).toContain(n)
+            expect(validTiles).toContain(n)
           }
         }
       }

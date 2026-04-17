@@ -1,59 +1,108 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
 import { createSfx, type SfxClipSpec } from '../../src/audio/sfx'
 
-type FakeAudio = {
-  src: string
-  volume: number
+type FakeOsc = {
+  type: string
+  frequency: { setValueAtTime(v: number, t: number): void; exponentialRampToValueAtTime(v: number, t: number): void; value: number }
+  connect(n: unknown): void
+  start(t: number): void
+  stop(t: number): void
+}
+type FakeGain = {
+  gain: { setValueAtTime(v: number, t: number): void; linearRampToValueAtTime(v: number, t: number): void; exponentialRampToValueAtTime(v: number, t: number): void }
+  connect(n: unknown): void
+}
+type FakeCtx = {
   currentTime: number
-  preload: string
-  play(): Promise<void>
-  pause(): void
-  load(): void
-  addEventListener(ev: string, cb: () => void): void
+  state: string
+  destination: unknown
+  createOscillator(): FakeOsc
+  createGain(): FakeGain
+  resume(): Promise<void>
 }
 
-let oldAudio: unknown
-let created: FakeAudio[] = []
+let oldAC: unknown
+let createdCtx = 0
+let startedOscillators = 0
 
-beforeEach(() => {
-  oldAudio = (globalThis as Record<string, unknown>).Audio
-  ;(globalThis as Record<string, unknown>).Audio = function (src: string): FakeAudio {
-    const a: FakeAudio = {
-      src, volume: 1, currentTime: 0, preload: '',
-      play: async () => { a.currentTime = 0 },
-      pause: () => {},
-      load: () => {},
-      addEventListener: () => {},
+function installFakeAudioContext(): void {
+  oldAC = (globalThis as Record<string, unknown>).AudioContext
+  ;(globalThis as Record<string, unknown>).AudioContext = function (): FakeCtx {
+    createdCtx++
+    return {
+      currentTime: 0,
+      state: 'running',
+      destination: {},
+      createOscillator(): FakeOsc {
+        return {
+          type: 'sine',
+          frequency: { setValueAtTime() {}, exponentialRampToValueAtTime() {}, value: 0 },
+          connect() {},
+          start() { startedOscillators++ },
+          stop() {},
+        }
+      },
+      createGain(): FakeGain {
+        return {
+          gain: { setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} },
+          connect() {},
+        }
+      },
+      async resume() {},
     }
-    created.push(a)
-    return a
   } as unknown
-})
+}
 
-afterEach(() => {
-  ;(globalThis as Record<string, unknown>).Audio = oldAudio
-  created = []
-})
+function uninstallFakeAudioContext(): void {
+  ;(globalThis as Record<string, unknown>).AudioContext = oldAC
+  createdCtx = 0
+  startedOscillators = 0
+}
 
-describe('sfx pool', () => {
-  it('preloads Audio instances per clip spec', () => {
-    const spec: SfxClipSpec[] = [
-      { id: 'hit', src: '/audio/hit.mp3', poolSize: 3 },
-      { id: 'step', src: '/audio/step.mp3', poolSize: 1 },
-    ]
-    const sfx = createSfx(spec, { volume: 0.5 })
-    expect(created.length).toBe(4)
-    expect(created[0].src).toContain('hit.mp3')
-    expect(sfx).toBeDefined()
+beforeEach(installFakeAudioContext)
+afterEach(uninstallFakeAudioContext)
+
+const clips: SfxClipSpec[] = [
+  { id: 'step', src: 'ignored', poolSize: 1 },
+  { id: 'hit', src: 'ignored', poolSize: 1 },
+  { id: 'death', src: 'ignored', poolSize: 1 },
+  { id: 'attack', src: 'ignored', poolSize: 1 },
+  { id: 'click', src: 'ignored', poolSize: 1 },
+]
+
+describe('synth sfx', () => {
+  it('createSfx does not instantiate AudioContext eagerly', () => {
+    createSfx(clips, { volume: 0.5 })
+    expect(createdCtx).toBe(0)
   })
 
-  it('play() triggers without throwing when clip exists', () => {
-    const sfx = createSfx([{ id: 'hit', src: '/audio/hit.mp3', poolSize: 2 }], { volume: 0.5 })
+  it('first play creates one AudioContext and schedules an oscillator', () => {
+    const sfx = createSfx(clips, { volume: 0.5 })
+    sfx.play('hit')
+    expect(createdCtx).toBe(1)
+    expect(startedOscillators).toBe(1)
+  })
+
+  it('subsequent plays reuse the same AudioContext', () => {
+    const sfx = createSfx(clips, { volume: 0.5 })
+    sfx.play('hit')
+    sfx.play('step')
+    sfx.play('death')
+    expect(createdCtx).toBe(1)
+    expect(startedOscillators).toBe(3)
+  })
+
+  it('play() on any clip id does not throw', () => {
+    const sfx = createSfx(clips, { volume: 0.5 })
+    for (const id of ['step', 'hit', 'death', 'attack', 'click'] as const) {
+      expect(() => sfx.play(id)).not.toThrow()
+    }
+  })
+
+  it('silently no-ops when AudioContext is unavailable', () => {
+    ;(globalThis as Record<string, unknown>).AudioContext = undefined
+    const sfx = createSfx(clips, { volume: 0.5 })
     expect(() => sfx.play('hit')).not.toThrow()
-  })
-
-  it('play() on unknown clip warns but does not throw', () => {
-    const sfx = createSfx([{ id: 'hit', src: '/audio/hit.mp3', poolSize: 2 }], { volume: 0.5 })
-    expect(() => sfx.play('unknown' as unknown as 'hit')).not.toThrow()
+    expect(startedOscillators).toBe(0)
   })
 })

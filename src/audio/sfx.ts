@@ -10,43 +10,110 @@ export type Sfx = {
   play(id: SfxClipId): void
 }
 
-export function createSfx(specs: readonly SfxClipSpec[], opts: { volume: number }): Sfx {
-  const pool = new Map<SfxClipId, HTMLAudioElement[]>()
-  const cursor = new Map<SfxClipId, number>()
-  const AudioCtor = (globalThis as Record<string, unknown>).Audio as typeof Audio | undefined
+type AudioCtxLike = {
+  currentTime: number
+  state: string
+  destination: AudioNode
+  createOscillator(): OscillatorNode
+  createGain(): GainNode
+  resume(): Promise<void>
+}
 
-  for (const spec of specs) {
-    if (!AudioCtor) continue
-    const list: HTMLAudioElement[] = []
-    for (let i = 0; i < spec.poolSize; i++) {
+function getAudioContextCtor(): (new () => AudioCtxLike) | null {
+  const g = globalThis as Record<string, unknown>
+  const AC = (g.AudioContext ?? g.webkitAudioContext) as (new () => AudioCtxLike) | undefined
+  return AC ?? null
+}
+
+export function createSfx(_specs: readonly SfxClipSpec[], opts: { volume: number }): Sfx {
+  const AC = getAudioContextCtor()
+  let ctx: AudioCtxLike | null = null
+
+  function getCtx(): AudioCtxLike | null {
+    if (!AC) return null
+    if (!ctx) {
       try {
-        const a = new AudioCtor(spec.src)
-        a.preload = 'auto'
-        a.volume = opts.volume
-        list.push(a)
+        ctx = new AC()
       } catch {
-        // ignore; silent fallback
+        return null
       }
     }
-    pool.set(spec.id, list)
-    cursor.set(spec.id, 0)
+    if (ctx && ctx.state === 'suspended') {
+      void ctx.resume().catch(() => {})
+    }
+    return ctx
+  }
+
+  function voicing(id: SfxClipId, c: AudioCtxLike): void {
+    const now = c.currentTime
+    const osc = c.createOscillator()
+    const gain = c.createGain()
+    osc.connect(gain)
+    gain.connect(c.destination)
+    const v = opts.volume
+
+    switch (id) {
+      case 'step': {
+        osc.type = 'triangle'
+        osc.frequency.setValueAtTime(520, now)
+        gain.gain.setValueAtTime(0, now)
+        gain.gain.linearRampToValueAtTime(v * 0.25, now + 0.005)
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06)
+        osc.start(now)
+        osc.stop(now + 0.08)
+        return
+      }
+      case 'hit': {
+        osc.type = 'triangle'
+        osc.frequency.setValueAtTime(220, now)
+        osc.frequency.exponentialRampToValueAtTime(70, now + 0.12)
+        gain.gain.setValueAtTime(v * 0.5, now)
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15)
+        osc.start(now)
+        osc.stop(now + 0.17)
+        return
+      }
+      case 'death': {
+        osc.type = 'sawtooth'
+        osc.frequency.setValueAtTime(420, now)
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.5)
+        gain.gain.setValueAtTime(v * 0.4, now)
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55)
+        osc.start(now)
+        osc.stop(now + 0.6)
+        return
+      }
+      case 'attack': {
+        osc.type = 'square'
+        osc.frequency.setValueAtTime(320, now)
+        osc.frequency.exponentialRampToValueAtTime(720, now + 0.08)
+        gain.gain.setValueAtTime(v * 0.28, now)
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1)
+        osc.start(now)
+        osc.stop(now + 0.12)
+        return
+      }
+      case 'click': {
+        osc.type = 'sine'
+        osc.frequency.setValueAtTime(880, now)
+        gain.gain.setValueAtTime(0, now)
+        gain.gain.linearRampToValueAtTime(v * 0.25, now + 0.005)
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05)
+        osc.start(now)
+        osc.stop(now + 0.07)
+        return
+      }
+    }
   }
 
   return {
     play(id) {
-      const list = pool.get(id)
-      if (!list || list.length === 0) {
-        console.warn(`[sfx] unknown or empty clip: ${id}`)
-        return
-      }
-      const i = cursor.get(id) ?? 0
-      const a = list[i]
-      cursor.set(id, (i + 1) % list.length)
+      const c = getCtx()
+      if (!c) return
       try {
-        a.currentTime = 0
-        void a.play()
+        voicing(id, c)
       } catch {
-        // silently drop
+        // any error during scheduling — drop silently
       }
     },
   }
