@@ -14,12 +14,17 @@ export type Loop = {
   getLog(): readonly Action[]
 }
 
+export type LoopOptions = {
+  enemyTickMs: number | (() => number)
+}
+
 export function createLoop(
   initial: World,
   bus: FxBus,
   onFrame: (state: World, dtMs: number) => void,
-  opts: { enemyTickMs: number } = { enemyTickMs: 300 },
+  opts: LoopOptions = { enemyTickMs: 300 },
 ): Loop {
+  const getTickMs = typeof opts.enemyTickMs === 'function' ? opts.enemyTickMs : () => opts.enemyTickMs as number
   let state = initial
   let log: Action[] = []
   let running = false
@@ -55,7 +60,7 @@ export function createLoop(
     if (!running) return
     const dtMs = lastFrameMs === 0 ? 16 : nowMs - lastFrameMs
     lastFrameMs = nowMs
-    if (state.phase === 'exploring' && nowMs - lastTickMs >= opts.enemyTickMs) {
+    if (state.phase === 'exploring' && nowMs - lastTickMs >= getTickMs()) {
       lastTickMs = nowMs
       runCurrentActor()
       apply({ type: 'TurnAdvance' })

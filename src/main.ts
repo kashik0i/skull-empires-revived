@@ -15,9 +15,13 @@ import { createFxCanvas } from './render/fx/canvas'
 import { wirePresets } from './render/fx/presets'
 import { createSfx } from './audio/sfx'
 import { wireAudio } from './audio/subscribe'
+import { createFlags } from './dev/flags'
+import { mountDevMenu, attachDevMenuHotkey } from './ui/devMenu'
 
 const TILE_SIZE = 24
 const PARTICLE_CAP = 500
+const FAST_TICK_MS = 300
+const SLOW_TICK_MS = 1000
 
 function randomSeed(): string {
   const bytes = new Uint8Array(8)
@@ -43,6 +47,8 @@ function main(): void {
     if (decoded) world = replay(decoded.seed, decoded.log)
   }
 
+  const flags = createFlags()
+
   const bus = createFxBus()
   const particles = createParticles({ capacity: PARTICLE_CAP })
   const tweens = createTweens()
@@ -62,17 +68,34 @@ function main(): void {
 
   const hud = mountHud(hudContainer)
   const overlay = mountOverlay(hudContainer)
+  const devMenu = mountDevMenu(hudContainer, flags)
+  attachDevMenuHotkey(devMenu)
 
-  const loop = createLoop(world, bus, (state, dtMs) => {
-    display.sync(state)
-    display.tick(dtMs)
-    fx.tick(dtMs)
-    bus.drain()
-    renderWorld(worldCtx, state, display, { tileSize: TILE_SIZE, shakeOffset: fx.currentShakeOffset() })
-    fx.draw()
-    hud.update(state)
-    overlay.update(state)
-  })
+  // FPS tracker: exponential moving average of 1/dtMs.
+  let emaFps = 60
+  const FPS_ALPHA = 0.08
+
+  const loop = createLoop(
+    world,
+    bus,
+    (state, dtMs) => {
+      if (dtMs > 0) emaFps = emaFps * (1 - FPS_ALPHA) + (1000 / dtMs) * FPS_ALPHA
+      display.sync(state)
+      display.tick(dtMs)
+      fx.tick(dtMs)
+      bus.drain()
+      renderWorld(worldCtx, state, display, {
+        tileSize: TILE_SIZE,
+        shakeOffset: fx.currentShakeOffset(),
+        showHeroPath: flags.get().showHeroPath,
+      })
+      fx.draw()
+      hud.update(state)
+      overlay.update(state)
+      devMenu.setFps(emaFps)
+    },
+    { enemyTickMs: () => flags.get().slowMotion ? SLOW_TICK_MS : FAST_TICK_MS },
+  )
 
   function createReplacement() { return createInitialWorld(randomSeed()) }
 

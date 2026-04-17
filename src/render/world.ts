@@ -7,6 +7,7 @@ import type { DisplayState } from './display'
 export type RenderOptions = {
   tileSize: number
   shakeOffset: { x: number; y: number }
+  showHeroPath?: boolean
 }
 
 export function renderWorld(
@@ -15,7 +16,7 @@ export function renderWorld(
   display: DisplayState,
   opts: RenderOptions,
 ): void {
-  const { tileSize, shakeOffset } = opts
+  const { tileSize, shakeOffset, showHeroPath } = opts
   const { floor } = state
   ctx.save()
   ctx.translate(shakeOffset.x, shakeOffset.y)
@@ -33,6 +34,20 @@ export function renderWorld(
       }
     }
   }
+
+  if (showHeroPath && state.heroPath.length > 0) {
+    ctx.fillStyle = palette.silkFlameAmber
+    ctx.globalAlpha = 0.55
+    for (const step of state.heroPath) {
+      const cx = step.x * tileSize + tileSize / 2
+      const cy = step.y * tileSize + tileSize / 2
+      ctx.beginPath()
+      ctx.arc(cx, cy, tileSize * 0.15, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.globalAlpha = 1
+  }
+
   for (const d of display.all()) {
     const actor = state.actors[d.id]
     if (!actor || !actor.alive) continue
