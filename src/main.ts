@@ -158,6 +158,8 @@ async function main(): Promise<void> {
     },
     {
       enemyTickMs: () => flags.get().slowMotion ? SLOW_TICK_MS : FAST_TICK_MS,
+      pauseEnemies: () => flags.get().pauseEnemies,
+      heroInvincible: () => flags.get().invincibleHero,
       onAction(action, state) {
         const idx = logOffset++
         dbClient.appendEvent(currentRunId, idx, state.tick, JSON.stringify(action))

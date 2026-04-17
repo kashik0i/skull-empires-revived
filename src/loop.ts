@@ -2,6 +2,7 @@ import { dispatchWithFx } from './core/dispatch'
 import { decide } from './ai/planner'
 import { resolveHeroActions } from './ai/heroAuto'
 import { runOutcome } from './core/selectors'
+import { listCardIds } from './content/cardLoader'
 import type { Action, World } from './core/types'
 import type { FxBus } from './render/fx/bus'
 
@@ -18,6 +19,10 @@ export type LoopOptions = {
   enemyTickMs: number | (() => number)
   /** Called after each action is successfully applied and pushed to the log. */
   onAction?: (action: Action, world: World) => void
+  /** When truthy, enemy turns are skipped (still advance). */
+  pauseEnemies?: () => boolean
+  /** When truthy, attacks targeting the hero are dropped silently. */
+  heroInvincible?: () => boolean
 }
 
 export function createLoop(
@@ -28,6 +33,8 @@ export function createLoop(
 ): Loop {
   const getTickMs = typeof opts.enemyTickMs === 'function' ? opts.enemyTickMs : () => opts.enemyTickMs as number
   const onAction = opts.onAction
+  const pauseEnemies = opts.pauseEnemies ?? (() => false)
+  const heroInvincible = opts.heroInvincible ?? (() => false)
   let state = initial
   let log: Action[] = []
   let running = false
@@ -35,6 +42,12 @@ export function createLoop(
   let lastFrameMs = 0
 
   function apply(action: Action): void {
+    if (
+      action.type === 'AttackActor'
+      && action.targetId === state.heroId
+      && heroInvincible()
+    ) return
+
     const before = state
     const after = dispatchWithFx(state, action, bus)
     if (after === before) return
@@ -47,7 +60,31 @@ export function createLoop(
       state = dispatchWithFx(state, end, bus)
       log.push(end)
       onAction?.(end, state)
+      return
     }
+    maybeOfferReward()
+  }
+
+  function maybeOfferReward(): void {
+    if (state.phase !== 'exploring') return
+    if (state.run.pendingReward !== null) return
+    if (state.run.depth >= 5) return
+    const anyEnemyAlive = Object.values(state.actors).some(a => a.kind === 'enemy' && a.alive)
+    if (anyEnemyAlive) return
+
+    const ids = listCardIds()
+    const choices: string[] = []
+    const picked = new Set<number>()
+    while (choices.length < 3 && picked.size < ids.length) {
+      const idx = Math.floor(Math.random() * ids.length)
+      if (picked.has(idx)) continue
+      picked.add(idx)
+      choices.push(ids[idx])
+    }
+    const offer: Action = { type: 'OfferCardReward', choices }
+    state = dispatchWithFx(state, offer, bus)
+    log.push(offer)
+    onAction?.(offer, state)
   }
 
   function runCurrentActor(): void {
@@ -57,6 +94,7 @@ export function createLoop(
     if (actor.kind === 'hero') {
       for (const a of resolveHeroActions(state)) apply(a)
     } else {
+      if (pauseEnemies()) return
       apply(decide(state, currentId))
     }
   }

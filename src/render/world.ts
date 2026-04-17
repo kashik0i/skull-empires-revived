@@ -33,6 +33,22 @@ export function renderWorld(
       } else if (t === Tile.Wall) {
         ctx.fillStyle = palette.deepPurple
         ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize)
+      } else if (t === Tile.Stairs) {
+        ctx.fillStyle = palette.deepPurpleLite
+        ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
+        ctx.fillStyle = palette.silkFlameAmber
+        const pad = Math.max(2, Math.floor(tileSize * 0.15))
+        const steps = 3
+        const stepH = Math.floor((tileSize - pad * 2) / steps)
+        for (let i = 0; i < steps; i++) {
+          const w = tileSize - pad * 2 - i * Math.floor(stepH * 0.6)
+          ctx.fillRect(
+            x * tileSize + pad + Math.floor(i * stepH * 0.3),
+            y * tileSize + pad + i * stepH,
+            w,
+            Math.max(2, stepH - 1),
+          )
+        }
       }
     }
   }
