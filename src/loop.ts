@@ -16,6 +16,8 @@ export type Loop = {
 
 export type LoopOptions = {
   enemyTickMs: number | (() => number)
+  /** Called after each action is successfully applied and pushed to the log. */
+  onAction?: (action: Action, world: World) => void
 }
 
 export function createLoop(
@@ -25,6 +27,7 @@ export function createLoop(
   opts: LoopOptions = { enemyTickMs: 300 },
 ): Loop {
   const getTickMs = typeof opts.enemyTickMs === 'function' ? opts.enemyTickMs : () => opts.enemyTickMs as number
+  const onAction = opts.onAction
   let state = initial
   let log: Action[] = []
   let running = false
@@ -37,11 +40,13 @@ export function createLoop(
     if (after === before) return
     state = after
     log.push(action)
+    onAction?.(action, state)
     const outcome = runOutcome(state)
     if (outcome && state.phase === 'exploring') {
       const end: Action = { type: 'RunEnd', outcome }
       state = dispatchWithFx(state, end, bus)
       log.push(end)
+      onAction?.(end, state)
     }
   }
 

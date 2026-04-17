@@ -7,8 +7,7 @@ import { mountOverlay } from './ui/overlay'
 import { mountCardHand } from './ui/cardHand'
 import { mountCardReward } from './ui/cardReward'
 import { attachDevInput } from './input/dev'
-import { encodeRun, decodeRun } from './persistence/url'
-import { replay } from './persistence/replay'
+import { encodeRun } from './persistence/url'
 import { createDisplayState } from './render/display'
 import { createFxBus } from './render/fx/bus'
 import { createParticles } from './render/fx/particles'
@@ -19,6 +18,8 @@ import { createSfx } from './audio/sfx'
 import { wireAudio } from './audio/subscribe'
 import { createFlags } from './dev/flags'
 import { mountDevMenu, attachDevMenuHotkey } from './ui/devMenu'
+import { createDbClient } from './persistence/db/client'
+import { resolveInitialRun } from './persistence/autoResume'
 
 const TILE_SIZE = 24
 const PARTICLE_CAP = 500
@@ -31,7 +32,7 @@ function randomSeed(): string {
   return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const worldCanvas = document.getElementById('world') as HTMLCanvasElement
   const fxCanvas = document.getElementById('fx') as HTMLCanvasElement
   const hudContainer = document.getElementById('hud') as HTMLDivElement
@@ -41,12 +42,27 @@ function main(): void {
 
   const params = new URLSearchParams(window.location.search)
   const runParam = params.get('run')
-  const seedParam = params.get('seed')
-  const initialSeed = seedParam ?? randomSeed()
-  let world = createInitialWorld(initialSeed)
-  if (runParam) {
-    const decoded = decodeRun(runParam)
-    if (decoded) world = replay(decoded.seed, decoded.log)
+
+  const dbClient = createDbClient()
+  const { world: initialWorld, runId, seed, source, resumedFromLog } = await resolveInitialRun({
+    urlRunParam: runParam,
+    dbClient,
+    seedFn: randomSeed,
+    runIdFn: () => crypto.randomUUID(),
+    createFresh: (s) => createInitialWorld(s),
+  })
+
+  let world = initialWorld
+
+  // Persist the run start for new/url-sourced runs
+  if (source !== 'db') {
+    await dbClient.startRun(runId, seed)
+    // For url-sourced runs, replay-write the pre-existing log into DB
+    if (source === 'url') {
+      for (let i = 0; i < resumedFromLog.length; i++) {
+        dbClient.appendEvent(runId, i, 0, JSON.stringify(resumedFromLog[i]))
+      }
+    }
   }
 
   const flags = createFlags()
@@ -99,6 +115,10 @@ function main(): void {
   let emaFps = 60
   const FPS_ALPHA = 0.08
 
+  // Mutable state for DB bookkeeping — updated on restart
+  let currentRunId = runId
+  let logOffset = resumedFromLog.length
+
   const loop = createLoop(
     world,
     bus,
@@ -120,10 +140,29 @@ function main(): void {
       cardHand.update(state)
       devMenu.setFps(emaFps)
     },
-    { enemyTickMs: () => flags.get().slowMotion ? SLOW_TICK_MS : FAST_TICK_MS },
+    {
+      enemyTickMs: () => flags.get().slowMotion ? SLOW_TICK_MS : FAST_TICK_MS,
+      onAction(action, state) {
+        const idx = logOffset++
+        dbClient.appendEvent(currentRunId, idx, state.tick, JSON.stringify(action))
+        if (action.type === 'RunEnd') {
+          const outcome = action.outcome === 'won' ? 'win' : 'loss'
+          void dbClient.endRun(currentRunId, outcome, state.tick)
+        }
+      },
+    },
   )
 
-  function createReplacement() { return createInitialWorld(randomSeed()) }
+  async function createReplacement() {
+    const newSeed = randomSeed()
+    const newRunId = crypto.randomUUID()
+    currentRunId = newRunId
+    logOffset = 0
+    const newWorld = createInitialWorld(newSeed)
+    loop.replaceState(newWorld)
+    display.sync(loop.getState())
+    await dbClient.startRun(newRunId, newSeed)
+  }
 
   attachDevInput(worldCanvas, TILE_SIZE, {
     onTileClick(tile) {
@@ -147,10 +186,10 @@ function main(): void {
       if (action) loop.submit(action)
     },
     onPauseToggle() { /* reserved */ },
-    onRestart() { loop.replaceState(createReplacement()); display.sync(loop.getState()) },
+    onRestart() { void createReplacement() },
   })
 
-  overlay.onRestart(() => { loop.replaceState(createReplacement()); display.sync(loop.getState()) })
+  overlay.onRestart(() => { void createReplacement() })
   overlay.onShare(() => {
     const s = loop.getState()
     const encoded = encodeRun(s.seed, loop.getLog())
