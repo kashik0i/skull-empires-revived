@@ -1,4 +1,4 @@
-import type { World } from '../types'
+import type { Actor, ActorId, World } from '../types'
 
 export function turnAdvance(state: World): World {
   const len = state.turnOrder.length
@@ -9,5 +9,15 @@ export function turnAdvance(state: World): World {
     const actor = state.actors[state.turnOrder[idx]]
     if (actor && actor.alive) break
   }
-  return { ...state, turnIndex: idx, tick: state.tick + 1 }
+
+  const nextActors: Record<ActorId, Actor> = {}
+  for (const id of Object.keys(state.actors)) {
+    const actor = state.actors[id]
+    const decremented = actor.statusEffects
+      .map((e) => ({ ...e, remainingTicks: e.remainingTicks - 1 }))
+      .filter((e) => e.remainingTicks > 0)
+    nextActors[id] = { ...actor, statusEffects: decremented }
+  }
+
+  return { ...state, actors: nextActors, turnIndex: idx, tick: state.tick + 1 }
 }

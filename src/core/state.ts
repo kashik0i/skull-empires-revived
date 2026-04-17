@@ -26,6 +26,7 @@ export function createInitialWorld(seed: string): World {
     atk: heroDef.atk,
     def: heroDef.def,
     alive: true,
+    statusEffects: [],
   }
   actors[hero.id] = hero
 
@@ -44,6 +45,7 @@ export function createInitialWorld(seed: string): World {
       atk: def.atk,
       def: def.def,
       alive: true,
+      statusEffects: [],
     }
   }
 
