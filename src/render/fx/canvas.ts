@@ -23,7 +23,7 @@ export type ShakeState = { amplitudePx: number; freqHz: number; ageMs: number; l
 
 export type FxCanvas = {
   tick(dtMs: number): void
-  draw(): void
+  draw(cameraOffset?: { x: number; y: number }): void
   spawnFloat(f: FloatNumber): void
   spawnFlash(f: Flash): void
   spawnShake(s: ShakeState): void
@@ -58,8 +58,10 @@ export function createFxCanvas(
         if (shake.ageMs >= shake.lifeMs) shake = null
       }
     },
-    draw() {
+    draw(cameraOffset = { x: 0, y: 0 }) {
       ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+      ctx.save()
+      ctx.translate(-cameraOffset.x, -cameraOffset.y)
       for (const f of flashes) {
         const alpha = 1 - f.ageMs / f.lifeMs
         ctx.globalAlpha = Math.max(0, alpha)
@@ -85,6 +87,7 @@ export function createFxCanvas(
         ctx.fillText(f.text, f.x, f.y)
       }
       ctx.globalAlpha = 1
+      ctx.restore()
     },
     spawnFloat(f) { floats.push(f) },
     spawnFlash(f) { flashes.push(f) },

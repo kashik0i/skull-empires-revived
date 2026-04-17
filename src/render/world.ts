@@ -7,6 +7,7 @@ import type { DisplayState } from './display'
 export type RenderOptions = {
   tileSize: number
   shakeOffset: { x: number; y: number }
+  cameraOffset: { x: number; y: number }
   showHeroPath?: boolean
 }
 
@@ -16,12 +17,13 @@ export function renderWorld(
   display: DisplayState,
   opts: RenderOptions,
 ): void {
-  const { tileSize, shakeOffset, showHeroPath } = opts
+  const { tileSize, shakeOffset, cameraOffset, showHeroPath } = opts
   const { floor } = state
-  ctx.save()
-  ctx.translate(shakeOffset.x, shakeOffset.y)
+  // Fill background before any translate so it always covers the full canvas.
   ctx.fillStyle = palette.obsidianBlack
-  ctx.fillRect(-shakeOffset.x, -shakeOffset.y, ctx.canvas.width, ctx.canvas.height)
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+  ctx.save()
+  ctx.translate(shakeOffset.x - cameraOffset.x, shakeOffset.y - cameraOffset.y)
   for (let y = 0; y < floor.height; y++) {
     for (let x = 0; x < floor.width; x++) {
       const t = floor.tiles[y * floor.width + x]

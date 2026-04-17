@@ -20,6 +20,8 @@ import { createFlags } from './dev/flags'
 import { mountDevMenu, attachDevMenuHotkey } from './ui/devMenu'
 import { createDbClient } from './persistence/db/client'
 import { resolveInitialRun } from './persistence/autoResume'
+import { computeCameraOffset } from './render/camera'
+import type { CameraOffset } from './render/camera'
 
 const TILE_SIZE = 24
 const PARTICLE_CAP = 500
@@ -115,6 +117,9 @@ async function main(): Promise<void> {
   let emaFps = 60
   const FPS_ALPHA = 0.08
 
+  // Camera offset — updated each frame; read by dev input handler.
+  let cameraOffset: CameraOffset = { x: 0, y: 0 }
+
   // Mutable state for DB bookkeeping — updated on restart
   let currentRunId = runId
   let logOffset = resumedFromLog.length
@@ -128,12 +133,22 @@ async function main(): Promise<void> {
       display.tick(dtMs)
       fx.tick(dtMs)
       bus.drain()
+      const heroDisp = display.get(state.heroId) ?? state.actors[state.heroId].pos
+      cameraOffset = computeCameraOffset(
+        { x: heroDisp.x * TILE_SIZE, y: heroDisp.y * TILE_SIZE },
+        TILE_SIZE,
+        worldCanvas.width,
+        worldCanvas.height,
+        state.floor.width,
+        state.floor.height,
+      )
       renderWorld(worldCtx, state, display, {
         tileSize: TILE_SIZE,
         shakeOffset: fx.currentShakeOffset(),
+        cameraOffset,
         showHeroPath: flags.get().showHeroPath,
       })
-      fx.draw()
+      fx.draw(cameraOffset)
       hud.update(state)
       overlay.update(state)
       cardReward.update(state)
@@ -187,7 +202,7 @@ async function main(): Promise<void> {
     },
     onPauseToggle() { /* reserved */ },
     onRestart() { void createReplacement() },
-  })
+  }, () => cameraOffset)
 
   overlay.onRestart(() => { void createReplacement() })
   overlay.onShare(() => {

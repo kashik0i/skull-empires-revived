@@ -1,4 +1,6 @@
 import type { Pos } from '../core/types'
+import { screenToWorldTile } from '../render/camera'
+import type { CameraOffset } from '../render/camera'
 
 export type DevInputHandlers = {
   onTileClick(tile: Pos): void
@@ -6,14 +8,22 @@ export type DevInputHandlers = {
   onRestart(): void
 }
 
-export function attachDevInput(canvas: HTMLCanvasElement, tileSize: number, handlers: DevInputHandlers): () => void {
+export function attachDevInput(
+  canvas: HTMLCanvasElement,
+  tileSize: number,
+  handlers: DevInputHandlers,
+  cameraOffsetGetter: () => CameraOffset = () => ({ x: 0, y: 0 }),
+): () => void {
   function onClick(e: MouseEvent): void {
     const rect = canvas.getBoundingClientRect()
-    const scaleX = canvas.width / rect.width
-    const scaleY = canvas.height / rect.height
-    const px = (e.clientX - rect.left) * scaleX
-    const py = (e.clientY - rect.top) * scaleY
-    const tile = { x: Math.floor(px / tileSize), y: Math.floor(py / tileSize) }
+    const tile = screenToWorldTile(
+      e.clientX,
+      e.clientY,
+      rect,
+      { width: canvas.width, height: canvas.height },
+      tileSize,
+      cameraOffsetGetter(),
+    )
     handlers.onTileClick(tile)
   }
   function onKey(e: KeyboardEvent): void {
