@@ -1,6 +1,6 @@
 import { dispatchWithFx } from './core/dispatch'
 import { decide } from './ai/planner'
-import { resolveHeroAction } from './ai/heroAuto'
+import { resolveHeroActions } from './ai/heroAuto'
 import { runOutcome } from './core/selectors'
 import type { Action, World } from './core/types'
 import type { FxBus } from './render/fx/bus'
@@ -45,8 +45,7 @@ export function createLoop(
     const actor = state.actors[currentId]
     if (!actor || !actor.alive) return
     if (actor.kind === 'hero') {
-      const heroAction = resolveHeroAction(state)
-      if (heroAction) apply(heroAction)
+      for (const a of resolveHeroActions(state)) apply(a)
     } else {
       apply(decide(state, currentId))
     }
@@ -82,9 +81,9 @@ export function createLoop(
       if (action.type === 'SetHeroIntent' && state.phase === 'exploring') {
         const currentId = state.turnOrder[state.turnIndex]
         if (currentId === state.heroId) {
-          const heroAction = resolveHeroAction(state)
-          if (heroAction) {
-            apply(heroAction)
+          const heroActions = resolveHeroActions(state)
+          if (heroActions.length > 0) {
+            for (const a of heroActions) apply(a)
             apply({ type: 'TurnAdvance' })
             lastTickMs = performance.now()
           }

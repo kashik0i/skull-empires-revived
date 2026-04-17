@@ -56,6 +56,7 @@ export function createInitialWorld(seed: string): World {
     actors,
     heroId: hero.id,
     heroIntent: null,
+    heroPath: [],
     turnOrder,
     turnIndex: 0,
     log: [],

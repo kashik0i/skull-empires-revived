@@ -16,6 +16,7 @@ function emptyWorld(w: number, h: number) {
     actors: {},
     heroId: '',
     heroIntent: null,
+    heroPath: [],
     turnOrder: [],
     turnIndex: 0,
     log: [],

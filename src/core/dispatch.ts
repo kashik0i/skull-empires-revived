@@ -65,6 +65,7 @@ function publishDiff(prev: World, next: World, action: Action, bus: FxBus): void
     case 'Restart':
     case 'TurnAdvance':
     case 'SetHeroIntent':
+    case 'SetHeroPath':
       return
   }
 }
@@ -86,5 +87,6 @@ function describeAction(action: Action, state: World): string {
     case 'SetHeroIntent': return action.intent
       ? `hero intent: ${action.intent.kind === 'attack' ? `attack ${action.intent.targetId}` : `move to (${action.intent.goal.x},${action.intent.goal.y})`}`
       : 'hero intent: cleared'
+    case 'SetHeroPath': return `hero path: ${action.path.length} step(s)`
   }
 }

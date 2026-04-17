@@ -3,7 +3,7 @@ import { moveActor } from './move'
 import { attackActor } from './attack'
 import { turnAdvance } from './turn'
 import { runEnd, restart } from './run'
-import { setHeroIntent } from './intent'
+import { setHeroIntent, setHeroPath } from './intent'
 
 export function rootReducer(state: World, action: Action): World {
   switch (action.type) {
@@ -13,6 +13,7 @@ export function rootReducer(state: World, action: Action): World {
     case 'RunEnd': return runEnd(state, action)
     case 'Restart': return restart(state, action)
     case 'SetHeroIntent': return setHeroIntent(state, action)
+    case 'SetHeroPath': return setHeroPath(state, action)
     default: return state
   }
 }

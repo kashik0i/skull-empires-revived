@@ -46,6 +46,7 @@ export type World = {
   actors: Record<ActorId, Actor>
   heroId: ActorId
   heroIntent: HeroIntent | null
+  heroPath: Pos[]
   turnOrder: ActorId[]
   turnIndex: number
   log: LogEntry[]
@@ -59,3 +60,4 @@ export type Action =
   | { type: 'RunEnd'; outcome: 'won' | 'lost' }
   | { type: 'Restart'; seed: string }
   | { type: 'SetHeroIntent'; intent: HeroIntent | null }
+  | { type: 'SetHeroPath'; path: Pos[] }
