@@ -34,6 +34,10 @@ export type Phase = 'exploring' | 'run_won' | 'run_lost'
 
 export type LogEntry = { tick: number; text: string }
 
+export type HeroIntent =
+  | { kind: 'move-to'; goal: Pos }
+  | { kind: 'attack'; targetId: ActorId }
+
 export type World = {
   seed: string
   tick: number
@@ -41,6 +45,7 @@ export type World = {
   floor: Floor
   actors: Record<ActorId, Actor>
   heroId: ActorId
+  heroIntent: HeroIntent | null
   turnOrder: ActorId[]
   turnIndex: number
   log: LogEntry[]
@@ -53,3 +58,4 @@ export type Action =
   | { type: 'TurnAdvance' }
   | { type: 'RunEnd'; outcome: 'won' | 'lost' }
   | { type: 'Restart'; seed: string }
+  | { type: 'SetHeroIntent'; intent: HeroIntent | null }

@@ -64,6 +64,7 @@ function publishDiff(prev: World, next: World, action: Action, bus: FxBus): void
       return
     case 'Restart':
     case 'TurnAdvance':
+    case 'SetHeroIntent':
       return
   }
 }
@@ -82,5 +83,8 @@ function describeAction(action: Action, state: World): string {
     case 'TurnAdvance': return `turn advance (tick ${state.tick})`
     case 'RunEnd': return `run ended: ${action.outcome}`
     case 'Restart': return `restart with seed ${action.seed}`
+    case 'SetHeroIntent': return action.intent
+      ? `hero intent: ${action.intent.kind === 'attack' ? `attack ${action.intent.targetId}` : `move to (${action.intent.goal.x},${action.intent.goal.y})`}`
+      : 'hero intent: cleared'
   }
 }

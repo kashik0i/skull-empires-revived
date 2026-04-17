@@ -1,0 +1,83 @@
+import { Tile, type ActorId, type Pos, type World } from '../core/types'
+
+export type PathfindOptions = {
+  /** Actor IDs whose current tile should be treated as passable. Used when attacking — we path to the target's tile. */
+  passThroughActors?: readonly ActorId[]
+}
+
+/**
+ * BFS from `from` to `to`. Returns the first step (single tile toward the goal) or null if unreachable.
+ * Treats walls as impassable. Treats every alive actor's tile as impassable EXCEPT ids in `passThroughActors`.
+ */
+export function firstStepToward(state: World, from: Pos, to: Pos, opts: PathfindOptions = {}): Pos | null {
+  if (from.x === to.x && from.y === to.y) return null
+  const { floor } = state
+  const w = floor.width
+  const h = floor.height
+  const passThrough = new Set(opts.passThroughActors ?? [])
+
+  const occupied = new Uint8Array(w * h)
+  for (const id in state.actors) {
+    const a = state.actors[id]
+    if (!a.alive) continue
+    if (passThrough.has(id)) continue
+    if (a.pos.x >= 0 && a.pos.y >= 0 && a.pos.x < w && a.pos.y < h) {
+      occupied[a.pos.y * w + a.pos.x] = 1
+    }
+  }
+  // Start tile is always passable for BFS (hero can step off it).
+  occupied[from.y * w + from.x] = 0
+
+  function canEnter(x: number, y: number): boolean {
+    if (x < 0 || y < 0 || x >= w || y >= h) return false
+    if (floor.tiles[y * w + x] !== Tile.Floor) return false
+    if (occupied[y * w + x]) return false
+    return true
+  }
+
+  const prev = new Int32Array(w * h)
+  prev.fill(-1)
+  const startIdx = from.y * w + from.x
+  prev[startIdx] = startIdx // mark visited
+
+  const queue: number[] = [startIdx]
+  const goalIdx = to.y * w + to.x
+  let found = false
+  while (queue.length > 0) {
+    const cur = queue.shift()!
+    if (cur === goalIdx) { found = true; break }
+    const cx = cur % w
+    const cy = (cur - cx) / w
+    const neighbours = [
+      [cx + 1, cy],
+      [cx - 1, cy],
+      [cx, cy + 1],
+      [cx, cy - 1],
+    ] as const
+    for (const [nx, ny] of neighbours) {
+      if (!canEnter(nx, ny) && !(nx === to.x && ny === to.y)) continue
+      const ni = ny * w + nx
+      if (prev[ni] !== -1) continue
+      prev[ni] = cur
+      queue.push(ni)
+    }
+  }
+
+  if (!found) return null
+
+  // Walk back from goal to start to find first step.
+  let cur = goalIdx
+  while (prev[cur] !== startIdx) {
+    const p = prev[cur]
+    if (p === cur) break
+    cur = p
+  }
+  const sx = cur % w
+  const sy = (cur - sx) / w
+  if (sx === from.x && sy === from.y) return null
+  return { x: sx, y: sy }
+}
+
+export function manhattan(a: Pos, b: Pos): number {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+}
