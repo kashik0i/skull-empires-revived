@@ -3,6 +3,9 @@
   "workspaces": {
     "": {
       "name": "skull-empires-revived",
+      "dependencies": {
+        "@sqlite.org/sqlite-wasm": "^3.51.2-build9",
+      },
       "devDependencies": {
         "@types/bun": "1.3.12",
         "typescript": "6.0.3",
@@ -52,6 +55,8 @@
     "@rolldown/binding-win32-x64-msvc": ["@rolldown/binding-win32-x64-msvc@1.0.0-rc.12", "", { "os": "win32", "cpu": "x64" }, "sha512-PyqoipaswDLAZtot351MLhrlrh6lcZPo2LSYE+VDxbVk24LVKAGOuE4hb8xZQmrPAuEtTZW8E6D2zc5EUZX4Lw=="],
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.0-rc.12", "", {}, "sha512-HHMwmarRKvoFsJorqYlFeFRzXZqCt2ETQlEDOb9aqssrnVBB1/+xgTGtuTrIk5vzLNX1MjMtTf7W9z3tsSbrxw=="],
+
+    "@sqlite.org/sqlite-wasm": ["@sqlite.org/sqlite-wasm@3.51.2-build9", "", {}, "sha512-tj2Sa6X4gVZqS9SiT2xlEeChSUklSGq8Hz6zKNbHW6NRiGyrSXiFcspnrWru1wPBT76RX/VxweESKxawCxfDxg=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
 
