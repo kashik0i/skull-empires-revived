@@ -5,7 +5,13 @@
     "hp": 20,
     "atk": 4,
     "def": 1,
-    "color": "#f5e6b0"
+    "color": "boneWhite",
+    "shape": {
+      "body":   { "type": "rect", "w": 0.5, "h": 0.7, "color": "boneWhite", "corner": 0.2 },
+      "accent": { "type": "strip", "y": 0.3, "h": 0.06, "color": "bloodCrimson" },
+      "head":   { "type": "circle", "y": -0.38, "r": 0.2, "color": "boneWhite" },
+      "eyes":   { "type": "eyeDots", "y": -0.4, "spacing": 0.09, "r": 0.03, "color": "deepPurpleDark" }
+    }
   },
   "bone-knight": {
     "kind": "enemy",
@@ -13,7 +19,13 @@
     "hp": 8,
     "atk": 3,
     "def": 0,
-    "color": "#b7a3d9",
-    "behavior": "chase"
+    "color": "runeViolet",
+    "behavior": "chase",
+    "shape": {
+      "body":   { "type": "rect", "w": 0.55, "h": 0.75, "color": "runeViolet", "corner": 0.1 },
+      "accent": { "type": "strip", "y": 0.35, "h": 0.08, "color": "silkFlameAmber" },
+      "head":   { "type": "circle", "y": -0.4, "r": 0.22, "color": "boneWhite" },
+      "eyes":   { "type": "eyeDots", "y": -0.42, "spacing": 0.1, "r": 0.03, "color": "obsidianBlack" }
+    }
   }
 }
