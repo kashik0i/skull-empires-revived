@@ -87,6 +87,7 @@ async function main(): Promise<void> {
   wireAudio(bus, sfx, world.heroId)
 
   const hud = mountHud(hudContainer)
+  hud.onDescend(() => loop.submit({ type: 'Descend' }))
   const overlay = mountOverlay(hudContainer)
   let targetingCardId: string | null = null
   const cardHand = mountCardHand(

@@ -1,8 +1,9 @@
-import type { World } from '../core/types'
+import { Tile, type World } from '../core/types'
 
 export type Hud = {
   update(state: World): void
   root: HTMLElement
+  onDescend(cb: () => void): void
 }
 
 export function mountHud(container: HTMLElement): Hud {
@@ -16,7 +17,8 @@ export function mountHud(container: HTMLElement): Hud {
   root.style.display = 'flex'
   root.style.flexDirection = 'column'
   root.style.gap = '8px'
-  root.style.maxWidth = '360px'
+  root.style.width = '240px'
+  root.style.boxSizing = 'border-box'
 
   const hpPanel = document.createElement('div')
   hpPanel.style.background = 'rgba(18, 10, 28, 0.8)'
@@ -48,6 +50,21 @@ export function mountHud(container: HTMLElement): Hud {
   depthEl.style.fontSize = '14px'
   depthPanel.appendChild(depthEl)
 
+  const descendBtn = document.createElement('button')
+  descendBtn.type = 'button'
+  descendBtn.textContent = 'Descend ↓'
+  Object.assign(descendBtn.style, {
+    background: '#5a3e8a',
+    color: '#f5e6b0',
+    border: '1px solid #f0b770',
+    borderRadius: '6px',
+    padding: '8px 10px',
+    fontFamily: 'inherit',
+    fontSize: '14px',
+    cursor: 'pointer',
+    display: 'none',
+  } satisfies Partial<CSSStyleDeclaration>)
+
   const logPanel = document.createElement('div')
   logPanel.style.background = 'rgba(18, 10, 28, 0.8)'
   logPanel.style.border = '1px solid #3e2a5c'
@@ -59,8 +76,12 @@ export function mountHud(container: HTMLElement): Hud {
 
   root.appendChild(hpPanel)
   root.appendChild(depthPanel)
+  root.appendChild(descendBtn)
   root.appendChild(logPanel)
   container.appendChild(root)
+
+  let descendCb: (() => void) | null = null
+  descendBtn.addEventListener('click', () => { descendCb?.() })
 
   function update(state: World): void {
     const hero = state.actors[state.heroId]
@@ -70,14 +91,26 @@ export function mountHud(container: HTMLElement): Hud {
       hpBarInner.style.width = `${(ratio * 100).toFixed(0)}%`
     }
     depthEl.textContent = `Floor ${state.run.depth} / 5`
+
+    const heroOnStairs = hero && hero.alive
+      && state.floor.tiles[hero.pos.y * state.floor.width + hero.pos.x] === Tile.Stairs
+    descendBtn.style.display = heroOnStairs ? 'block' : 'none'
+
     logPanel.replaceChildren()
     const recent = state.log.slice(-8)
     for (const entry of recent) {
       const line = document.createElement('div')
       line.textContent = `[${entry.tick}] ${entry.text}`
+      line.style.whiteSpace = 'nowrap'
+      line.style.overflow = 'hidden'
+      line.style.textOverflow = 'ellipsis'
       logPanel.appendChild(line)
     }
   }
 
-  return { root, update }
+  return {
+    root,
+    update,
+    onDescend(cb) { descendCb = cb },
+  }
 }

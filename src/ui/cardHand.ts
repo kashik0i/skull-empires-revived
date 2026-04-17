@@ -30,6 +30,7 @@ export function mountCardHand(
 
   let targetingCardId: string | null = null
   const cardElements: Map<string, HTMLElement> = new Map()
+  let lastHandKey = ''
 
   function handleCardClick(cardId: string): void {
     const card = getCard(cardId)
@@ -57,11 +58,11 @@ export function mountCardHand(
     }
   }
 
-  function update(state: World): void {
+  function rebuild(hand: readonly string[]): void {
     root.replaceChildren()
     cardElements.clear()
 
-    for (const cardId of state.run.cards.hand) {
+    for (const cardId of hand) {
       const card = getCard(cardId)
 
       const btn = document.createElement('button')
@@ -92,7 +93,14 @@ export function mountCardHand(
       root.appendChild(btn)
       cardElements.set(cardId, btn)
     }
+  }
 
+  function update(state: World): void {
+    const key = state.run.cards.hand.join('|')
+    if (key !== lastHandKey) {
+      lastHandKey = key
+      rebuild(state.run.cards.hand)
+    }
     updateStyles()
   }
 
