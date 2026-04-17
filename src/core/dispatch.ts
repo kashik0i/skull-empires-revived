@@ -1,13 +1,71 @@
 import type { Action, World } from './types'
 import { rootReducer } from './reducers'
 import { appendLog } from './log'
+import type { FxBus } from '../render/fx/bus'
 
 export function dispatch(state: World, action: Action): World {
   const next = rootReducer(state, action)
   if (next === state) return state
   const text = describeAction(action, next)
-  const withLog = { ...next, log: appendLog(next.log, { tick: next.tick, text }) }
-  return withLog
+  return { ...next, log: appendLog(next.log, { tick: next.tick, text }) }
+}
+
+export function dispatchWithFx(state: World, action: Action, bus: FxBus): World {
+  const next = rootReducer(state, action)
+  if (next === state) return state
+  publishDiff(state, next, action, bus)
+  const text = describeAction(action, next)
+  return { ...next, log: appendLog(next.log, { tick: next.tick, text }) }
+}
+
+function publishDiff(prev: World, next: World, action: Action, bus: FxBus): void {
+  switch (action.type) {
+    case 'MoveActor': {
+      const before = prev.actors[action.actorId]
+      const after = next.actors[action.actorId]
+      if (!before || !after) return
+      bus.publish({ kind: 'moved', actorId: action.actorId, from: before.pos, to: after.pos })
+      return
+    }
+    case 'AttackActor': {
+      const attacker = prev.actors[action.attackerId]
+      const beforeTarget = prev.actors[action.targetId]
+      const afterTarget = next.actors[action.targetId]
+      if (!attacker || !beforeTarget || !afterTarget) return
+      bus.publish({
+        kind: 'attacked',
+        attackerId: action.attackerId,
+        targetId: action.targetId,
+        attackerPos: attacker.pos,
+        targetPos: beforeTarget.pos,
+      })
+      const dmg = beforeTarget.hp - afterTarget.hp
+      if (dmg > 0) {
+        bus.publish({
+          kind: 'damaged',
+          targetId: action.targetId,
+          amount: dmg,
+          pos: beforeTarget.pos,
+          isHero: beforeTarget.id === prev.heroId,
+        })
+      }
+      if (!afterTarget.alive && beforeTarget.alive) {
+        bus.publish({
+          kind: 'died',
+          actorId: action.targetId,
+          pos: beforeTarget.pos,
+          archetype: beforeTarget.archetype,
+        })
+      }
+      return
+    }
+    case 'RunEnd':
+      bus.publish({ kind: 'run-ended', outcome: action.outcome })
+      return
+    case 'Restart':
+    case 'TurnAdvance':
+      return
+  }
 }
 
 function describeAction(action: Action, state: World): string {
