@@ -1,0 +1,19 @@
+{
+  "hero": {
+    "kind": "hero",
+    "name": "Wanderer",
+    "hp": 20,
+    "atk": 4,
+    "def": 1,
+    "color": "#f5e6b0"
+  },
+  "bone-knight": {
+    "kind": "enemy",
+    "name": "Bone Knight",
+    "hp": 8,
+    "atk": 3,
+    "def": 0,
+    "color": "#b7a3d9",
+    "behavior": "chase"
+  }
+}
