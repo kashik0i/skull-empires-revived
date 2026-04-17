@@ -39,6 +39,15 @@ export function mountHud(container: HTMLElement): Hud {
   hpPanel.appendChild(hpLabel)
   hpPanel.appendChild(hpBarOuter)
 
+  const depthPanel = document.createElement('div')
+  depthPanel.style.background = 'rgba(18, 10, 28, 0.8)'
+  depthPanel.style.border = '1px solid #5a3e8a'
+  depthPanel.style.padding = '6px 10px'
+  depthPanel.style.borderRadius = '6px'
+  const depthEl = document.createElement('div')
+  depthEl.style.fontSize = '14px'
+  depthPanel.appendChild(depthEl)
+
   const logPanel = document.createElement('div')
   logPanel.style.background = 'rgba(18, 10, 28, 0.8)'
   logPanel.style.border = '1px solid #3e2a5c'
@@ -49,6 +58,7 @@ export function mountHud(container: HTMLElement): Hud {
   logPanel.style.overflow = 'hidden'
 
   root.appendChild(hpPanel)
+  root.appendChild(depthPanel)
   root.appendChild(logPanel)
   container.appendChild(root)
 
@@ -59,6 +69,7 @@ export function mountHud(container: HTMLElement): Hud {
       const ratio = Math.max(0, Math.min(1, hero.hp / hero.maxHp))
       hpBarInner.style.width = `${(ratio * 100).toFixed(0)}%`
     }
+    depthEl.textContent = `Floor ${state.run.depth} / 5`
     logPanel.replaceChildren()
     const recent = state.log.slice(-8)
     for (const entry of recent) {
