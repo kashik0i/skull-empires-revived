@@ -9,6 +9,7 @@ export type RenderOptions = {
   shakeOffset: { x: number; y: number }
   cameraOffset: { x: number; y: number }
   showHeroPath?: boolean
+  revealMap?: boolean
 }
 
 export function renderWorld(
@@ -17,7 +18,7 @@ export function renderWorld(
   display: DisplayState,
   opts: RenderOptions,
 ): void {
-  const { tileSize, shakeOffset, cameraOffset, showHeroPath } = opts
+  const { tileSize, shakeOffset, cameraOffset, showHeroPath, revealMap } = opts
   const { floor } = state
   // Fill background before any translate so it always covers the full canvas.
   ctx.fillStyle = palette.obsidianBlack
@@ -66,13 +67,35 @@ export function renderWorld(
     ctx.globalAlpha = 1
   }
 
+  const targetId = state.heroIntent?.kind === 'attack' ? state.heroIntent.targetId : null
+  const pulseAlpha = 0.6 + 0.4 * (0.5 + 0.5 * Math.sin(performance.now() / 180))
+
   for (const d of display.all()) {
     const actor = state.actors[d.id]
     if (!actor || !actor.alive) continue
     const def = getArchetype(actor.archetype)
     const cx = d.x * tileSize + tileSize / 2
     const cy = d.y * tileSize + tileSize / 2
+
+    if (actor.id === targetId) {
+      ctx.strokeStyle = palette.bloodCrimson
+      ctx.lineWidth = 2
+      ctx.globalAlpha = pulseAlpha
+      ctx.beginPath()
+      ctx.arc(cx, cy, tileSize * 0.55, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.globalAlpha = 1
+    }
+
     drawShape(ctx, def.shape, cx, cy, tileSize, key => palette[key])
+
+    if (revealMap && actor.kind === 'enemy') {
+      ctx.fillStyle = palette.silkFlameAmber
+      ctx.font = `${Math.floor(tileSize * 0.5)}px ui-monospace, monospace`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'bottom'
+      ctx.fillText(`${actor.hp}/${actor.maxHp}`, cx, cy - tileSize * 0.5)
+    }
   }
   ctx.restore()
 }

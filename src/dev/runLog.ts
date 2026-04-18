@@ -24,6 +24,16 @@ export function appendDevLog(action: Action, state: World, idx: number, source: 
     source,
     action,
   }
+  postEntry(entry)
+}
+
+/** Log a non-action event (UI, flag change, etc.) into the same stream for context. */
+export function logDevEvent(kind: string, detail: Record<string, unknown>): void {
+  if (!ENABLED) return
+  postEntry({ kind, ...detail, at: Date.now() })
+}
+
+function postEntry(entry: unknown): void {
   void fetch('/_dev/event', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

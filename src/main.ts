@@ -22,7 +22,7 @@ import { createDbClient } from './persistence/db/client'
 import { resolveInitialRun } from './persistence/autoResume'
 import { computeCameraOffset } from './render/camera'
 import type { CameraOffset } from './render/camera'
-import { appendDevLog, resetDevLog } from './dev/runLog'
+import { appendDevLog, resetDevLog, logDevEvent } from './dev/runLog'
 
 const TILE_SIZE = 24
 const PARTICLE_CAP = 500
@@ -70,6 +70,14 @@ async function main(): Promise<void> {
   }
 
   const flags = createFlags()
+  let lastFlagsJson = JSON.stringify(flags.get())
+  flags.subscribe(next => {
+    const nextJson = JSON.stringify(next)
+    if (nextJson !== lastFlagsJson) {
+      logDevEvent('flags', { flags: next })
+      lastFlagsJson = nextJson
+    }
+  })
 
   const bus = createFxBus()
   const particles = createParticles({ capacity: PARTICLE_CAP })
@@ -150,6 +158,7 @@ async function main(): Promise<void> {
         shakeOffset: fx.currentShakeOffset(),
         cameraOffset,
         showHeroPath: flags.get().showHeroPath,
+        revealMap: flags.get().revealMap,
       })
       fx.draw(cameraOffset)
       hud.update(state)
