@@ -11,13 +11,14 @@ describe('initial state', () => {
     expect(w.floor.tiles[hero.pos.y * w.floor.width + hero.pos.x]).toBe(Tile.Floor)
   })
 
-  it('spawns 2+ bone-knight enemies on floor tiles', () => {
+  it('spawns 2+ enemies on floor tiles drawn from the floor-1 composition', () => {
     const w = createInitialWorld('seed-1')
     const enemies = Object.values(w.actors).filter(a => a.kind === 'enemy')
     expect(enemies.length).toBeGreaterThanOrEqual(2)
+    const floor1Archetypes = new Set(['bone-knight', 'tiny-zombie'])
     for (const e of enemies) {
       expect(w.floor.tiles[e.pos.y * w.floor.width + e.pos.x]).toBe(Tile.Floor)
-      expect(e.archetype).toBe('bone-knight')
+      expect(floor1Archetypes.has(e.archetype)).toBe(true)
     }
   })
 

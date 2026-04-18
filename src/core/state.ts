@@ -23,21 +23,42 @@ export function shuffleWithRng<T>(arr: T[], rng: RngState): { result: T[]; rng: 
   return { result, rng: state }
 }
 
-/** Spawn enemies on a floor using the given spawns (skipping index 0 = hero spawn). */
+/**
+ * Per-depth enemy compositions. Each entry is an ordered list of archetype
+ * ids; the spawner places them in order against available floor spawn slots
+ * (truncating if the floor has fewer spawns than the list).
+ */
+const FLOOR_COMPOSITIONS: Record<number, string[]> = {
+  1: ['bone-knight', 'tiny-zombie'],
+  2: ['bone-knight', 'tiny-zombie', 'imp'],
+  3: ['bone-knight', 'imp', 'orc-warrior'],
+  4: ['masked-orc', 'orc-warrior', 'bone-knight', 'imp'],
+}
+
+export function compositionForDepth(depth: number): string[] {
+  return FLOOR_COMPOSITIONS[depth] ?? FLOOR_COMPOSITIONS[4]!
+}
+
+/**
+ * Spawn enemies on a floor using the given spawns (skipping index 0 = hero spawn)
+ * and the provided archetype composition.
+ */
 export function spawnEnemiesOnFloor(
   spawns: Floor['spawns'],
   idOffset: number,
+  composition: readonly string[],
 ): Record<ActorId, Actor> {
   const actors: Record<ActorId, Actor> = {}
-  const enemyCount = Math.min(spawns.length - 1, 4)
+  const enemyCount = Math.min(spawns.length - 1, composition.length)
   for (let i = 0; i < enemyCount; i++) {
     const spawn = spawns[i + 1]
-    const def = getArchetype('bone-knight')
+    const archetype = composition[i]
+    const def = getArchetype(archetype)
     const id = `enemy-${idOffset + i}`
     actors[id] = {
       id,
       kind: 'enemy',
-      archetype: 'bone-knight',
+      archetype,
       pos: spawn,
       hp: def.hp,
       maxHp: def.hp,
@@ -106,7 +127,7 @@ export function createInitialWorld(seed: string): World {
   }
   actors[hero.id] = hero
 
-  const enemies = spawnEnemiesOnFloor(spawns, 1)
+  const enemies = spawnEnemiesOnFloor(spawns, 1, compositionForDepth(1))
   Object.assign(actors, enemies)
 
   // Shuffle the starter deck and draw 3 into hand

@@ -18,13 +18,22 @@ const FRAMES: Record<string, SpriteFrame> = {
   knight_m_run:   { x: 192, y: 100, w: 16, h: 28, frames: 4 },
   knight_m_hit:   { x: 256, y: 100, w: 16, h: 28, frames: 1 },
 
-  // Skeleton — 16×16, 4 idle frames (fits in a tile)
-  skelet_idle:    { x: 368, y: 80,  w: 16, h: 16, frames: 4 },
-  skelet_run:     { x: 432, y: 80,  w: 16, h: 16, frames: 4 },
+  // 16×16 mook tier — 4 idle frames, fits a tile
+  skelet_idle:       { x: 368, y: 80,  w: 16, h: 16, frames: 4 },
+  skelet_run:        { x: 432, y: 80,  w: 16, h: 16, frames: 4 },
+  tiny_zombie_idle:  { x: 368, y: 16,  w: 16, h: 16, frames: 4 },
+  imp_idle:          { x: 368, y: 48,  w: 16, h: 16, frames: 4 },
+  zombie_idle:       { x: 368, y: 144, w: 16, h: 16, frames: 4 },
+  ice_zombie_idle:   { x: 432, y: 144, w: 16, h: 16, frames: 4 },
+
+  // 16×20 orc tier — 4 idle frames, slightly taller
+  masked_orc_idle:   { x: 368, y: 172, w: 16, h: 20, frames: 4 },
+  orc_warrior_idle:  { x: 368, y: 204, w: 16, h: 20, frames: 4 },
+  orc_shaman_idle:   { x: 368, y: 236, w: 16, h: 20, frames: 4 },
 
   // Big demon boss — 32×36, 4 idle frames (2 tiles wide)
-  big_demon_idle: { x: 16,  y: 364, w: 32, h: 36, frames: 4 },
-  big_demon_run:  { x: 144, y: 364, w: 32, h: 36, frames: 4 },
+  big_demon_idle:    { x: 16,  y: 364, w: 32, h: 36, frames: 4 },
+  big_demon_run:     { x: 144, y: 364, w: 32, h: 36, frames: 4 },
 
   // Terrain — 16×16 single frames
   floor_1:        { x: 16,  y: 64,  w: 16, h: 16, frames: 1 },

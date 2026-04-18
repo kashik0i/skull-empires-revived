@@ -2,7 +2,7 @@ import type { World } from '../types'
 import { Tile } from '../types'
 import { generateFloor } from '../../procgen/floor'
 import { generateBossFloor } from '../../procgen/boss'
-import { spawnEnemiesOnFloor, spawnBossEncounter } from '../state'
+import { spawnEnemiesOnFloor, spawnBossEncounter, compositionForDepth } from '../state'
 import type { ActorId, Actor } from '../types'
 
 export function descend(world: World): World {
@@ -41,7 +41,7 @@ export function descend(world: World): World {
   const idOffset = (newDepth - 1) * 10 + 1
   const enemies = isBossFloor
     ? spawnBossEncounter(newSpawns, idOffset)
-    : spawnEnemiesOnFloor(newSpawns, idOffset)
+    : spawnEnemiesOnFloor(newSpawns, idOffset, compositionForDepth(newDepth))
   Object.assign(actors, enemies)
 
   const turnOrder = Object.keys(actors)

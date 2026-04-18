@@ -30,6 +30,66 @@
       "eyes":   { "type": "eyeDots", "y": -0.42, "spacing": 0.1, "r": 0.03, "color": "obsidianBlack" }
     }
   },
+  "tiny-zombie": {
+    "kind": "enemy",
+    "name": "Tiny Zombie",
+    "hp": 4,
+    "atk": 2,
+    "def": 0,
+    "color": "runeViolet",
+    "behavior": "chase",
+    "sprite": "tiny_zombie_idle",
+    "shape": {
+      "body":   { "type": "rect", "w": 0.4, "h": 0.6, "color": "runeViolet", "corner": 0.15 },
+      "head":   { "type": "circle", "y": -0.3, "r": 0.15, "color": "boneWhite" },
+      "eyes":   { "type": "eyeDots", "y": -0.3, "spacing": 0.07, "r": 0.02, "color": "bloodCrimson" }
+    }
+  },
+  "imp": {
+    "kind": "enemy",
+    "name": "Imp",
+    "hp": 5,
+    "atk": 3,
+    "def": 0,
+    "color": "bloodCrimson",
+    "behavior": "chase",
+    "sprite": "imp_idle",
+    "shape": {
+      "body":   { "type": "rect", "w": 0.45, "h": 0.65, "color": "bloodCrimson", "corner": 0.1 },
+      "head":   { "type": "circle", "y": -0.35, "r": 0.18, "color": "bloodCrimson" },
+      "eyes":   { "type": "eyeDots", "y": -0.35, "spacing": 0.08, "r": 0.025, "color": "silkFlameAmber" }
+    }
+  },
+  "orc-warrior": {
+    "kind": "enemy",
+    "name": "Orc Warrior",
+    "hp": 14,
+    "atk": 4,
+    "def": 1,
+    "color": "runeViolet",
+    "behavior": "chase",
+    "sprite": "orc_warrior_idle",
+    "shape": {
+      "body":   { "type": "rect", "w": 0.6, "h": 0.8, "color": "runeViolet", "corner": 0.12 },
+      "head":   { "type": "circle", "y": -0.42, "r": 0.24, "color": "runeViolet" },
+      "eyes":   { "type": "eyeDots", "y": -0.42, "spacing": 0.1, "r": 0.03, "color": "silkFlameAmber" }
+    }
+  },
+  "masked-orc": {
+    "kind": "enemy",
+    "name": "Masked Orc",
+    "hp": 18,
+    "atk": 5,
+    "def": 1,
+    "color": "deepPurple",
+    "behavior": "chase",
+    "sprite": "masked_orc_idle",
+    "shape": {
+      "body":   { "type": "rect", "w": 0.62, "h": 0.85, "color": "deepPurple", "corner": 0.12 },
+      "head":   { "type": "circle", "y": -0.42, "r": 0.25, "color": "deepPurple" },
+      "eyes":   { "type": "eyeDots", "y": -0.42, "spacing": 0.1, "r": 0.03, "color": "silkFlameAmber" }
+    }
+  },
   "skull-emperor": {
     "kind": "enemy",
     "name": "Skull Emperor",

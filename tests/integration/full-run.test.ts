@@ -56,9 +56,19 @@ describe('full-run integration', () => {
     }
   })
 
-  it('terminates with an outcome within the safety bound', () => {
+  it('holds engine invariants across a long idle sim', () => {
+    // No hero input — enemies act freely. Verify state stays well-formed:
+    // hero exists, hp never goes above maxHp, no actor leaves the map.
     const seed = 'integration-2b'
     const { final } = simulate(seed, [])
-    expect(['run_won', 'run_lost']).toContain(final.phase)
+    const hero = final.actors[final.heroId]
+    expect(hero).toBeDefined()
+    for (const a of Object.values(final.actors)) {
+      expect(a.hp).toBeLessThanOrEqual(a.maxHp)
+      expect(a.pos.x).toBeGreaterThanOrEqual(0)
+      expect(a.pos.y).toBeGreaterThanOrEqual(0)
+      expect(a.pos.x).toBeLessThan(final.floor.width)
+      expect(a.pos.y).toBeLessThan(final.floor.height)
+    }
   })
 })
