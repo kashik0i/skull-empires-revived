@@ -25,6 +25,7 @@ export function attackActor(state: World, action: Extract<Action, { type: 'Attac
   const attacker = state.actors[action.attackerId]
   const target = state.actors[action.targetId]
   if (!attacker || !target || !attacker.alive || !target.alive) return state
+  if (target.kind === 'npc') return state
   if (!adjacent(attacker.pos, target.pos)) return state
 
   const effectiveAtk = attacker.atk + buffAtkBonus(attacker)

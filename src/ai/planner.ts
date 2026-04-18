@@ -6,6 +6,7 @@ export function decide(state: World, actorId: ActorId): Action {
   const actor = state.actors[actorId]
   if (!actor || !actor.alive) return { type: 'TurnAdvance' }
   if (actor.kind === 'hero') return { type: 'TurnAdvance' }
+  if (actor.kind === 'npc') return { type: 'TurnAdvance' }
   const def = getArchetype(actor.archetype)
   switch (def.behavior ?? 'chase') {
     case 'chase': return chaseHero(state, actorId)
