@@ -2,11 +2,11 @@ import type { Action, World } from '../types'
 import { moveActor } from './move'
 import { attackActor } from './attack'
 import { turnAdvance } from './turn'
-import { runEnd, restart } from './run'
+import { runEnd, restart, offerItemReward, pickItemReward } from './run'
 import { setHeroIntent, setHeroPath } from './intent'
 import { descend } from './descend'
 import { playCard, offerCardReward, pickCardReward } from './card'
-import { clearDialog, openMerchantDialog, merchantTrade, resolveShrine } from './dialog'
+import { clearDialog, openMerchantDialog, merchantBuyItem, resolveShrine } from './dialog'
 import { useItem, equipItem, unequipItem, pickupItem } from './inventory'
 
 export function rootReducer(state: World, action: Action): World {
@@ -24,12 +24,14 @@ export function rootReducer(state: World, action: Action): World {
     case 'PickCardReward': return pickCardReward(state, action)
     case 'ClearDialog': return clearDialog(state)
     case 'OpenMerchantDialog': return openMerchantDialog(state, action)
-    case 'MerchantTrade': return merchantTrade(state, action)
+    case 'MerchantBuyItem': return merchantBuyItem(state, action)
     case 'ResolveShrine': return resolveShrine(state, action)
     case 'UseItem': return useItem(state, action)
     case 'EquipItem': return equipItem(state, action)
     case 'UnequipItem': return unequipItem(state, action)
     case 'PickupItem': return pickupItem(state, action)
+    case 'OfferItemReward': return offerItemReward(state, action)
+    case 'PickItemReward': return pickItemReward(state, action)
     default: return state
   }
 }

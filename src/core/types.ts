@@ -93,6 +93,7 @@ export type LoreScroll = { id: string; pos: Pos; fragmentIndex: number }
 export type DialogAction =
   | { type: 'ResolveShrine'; choice: 'blood' | 'breath'; pos: Pos }
   | { type: 'MerchantTrade'; cardId: string; merchantId: ActorId }
+  | { type: 'MerchantBuyItem'; itemId: string; merchantId: ActorId }
   | { type: 'ClearDialog' }
 
 export type PendingDialog = {
@@ -127,6 +128,7 @@ export type World = {
     pendingReward: null | { choices: string[] }
     /** Set after a card reward has been offered on this floor; reset on Descend. */
     rewardedThisFloor: boolean
+    pendingItemReward: string[] | null
   }
 }
 

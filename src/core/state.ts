@@ -190,6 +190,7 @@ export function createInitialWorld(seed: string): World {
       },
       pendingReward: null,
       rewardedThisFloor: false,
+      pendingItemReward: null,
     },
   }
 }

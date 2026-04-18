@@ -2,7 +2,7 @@ import { dispatchWithFx } from './core/dispatch'
 import { decide } from './ai/planner'
 import { resolveHeroActions } from './ai/heroAuto'
 import { runOutcome } from './core/selectors'
-import { listCardIds } from './content/cardLoader'
+import { itemPoolForDepth } from './content/itemLoader'
 import type { Action, World } from './core/types'
 import type { FxBus } from './render/fx/bus'
 
@@ -67,22 +67,23 @@ export function createLoop(
 
   function maybeOfferReward(): void {
     if (state.phase !== 'exploring') return
-    if (state.run.pendingReward !== null) return
+    if (state.run.pendingItemReward !== null) return
     if (state.run.rewardedThisFloor) return
     if (state.run.depth >= 5) return
     const anyEnemyAlive = Object.values(state.actors).some(a => a.kind === 'enemy' && a.alive)
     if (anyEnemyAlive) return
 
-    const ids = listCardIds()
+    const nextDepth = Math.min(5, state.run.depth + 1)
+    const pool = itemPoolForDepth(nextDepth).slice()
     const choices: string[] = []
     const picked = new Set<number>()
-    while (choices.length < 3 && picked.size < ids.length) {
-      const idx = Math.floor(Math.random() * ids.length)
+    while (choices.length < 3 && picked.size < pool.length) {
+      const idx = Math.floor(Math.random() * pool.length)
       if (picked.has(idx)) continue
       picked.add(idx)
-      choices.push(ids[idx])
+      choices.push(pool[idx])
     }
-    const offer: Action = { type: 'OfferCardReward', choices }
+    const offer: Action = { type: 'OfferItemReward', itemIds: choices }
     state = dispatchWithFx(state, offer, bus)
     log.push(offer)
     onAction?.(offer, state)

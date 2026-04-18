@@ -79,6 +79,7 @@ export function descend(world: World): World {
       ...world.run,
       depth: newDepth,
       rewardedThisFloor: false,
+      pendingItemReward: null,
     },
   }
 }

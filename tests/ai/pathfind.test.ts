@@ -33,6 +33,7 @@ function emptyWorld(w: number, h: number) {
       cards: { deck: [], hand: [], discard: [] },
       pendingReward: null,
       rewardedThisFloor: false,
+      pendingItemReward: null,
     },
   }
 }
