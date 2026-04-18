@@ -3,6 +3,7 @@ import { getArchetype } from '../content/loader'
 import { palette } from '../content/palette'
 import { drawShape } from './shape'
 import { drawSprite, drawTileSprite, itemSpriteName, isAtlasReady } from './sprites'
+import { computeVisible } from './fov'
 import type { DisplayState } from './display'
 
 export type RenderOptions = {
@@ -11,6 +12,8 @@ export type RenderOptions = {
   cameraOffset: { x: number; y: number }
   showHeroPath?: boolean
   revealMap?: boolean
+  /** Bitset (length w*h) tracking every tile ever seen on this floor. Mutated by renderWorld. */
+  seenTiles?: Uint8Array
 }
 
 export function renderWorld(
@@ -19,8 +22,22 @@ export function renderWorld(
   display: DisplayState,
   opts: RenderOptions,
 ): void {
-  const { tileSize, shakeOffset, cameraOffset, showHeroPath, revealMap } = opts
+  const { tileSize, shakeOffset, cameraOffset, showHeroPath, revealMap, seenTiles } = opts
   const { floor } = state
+  const hero = state.actors[state.heroId]
+
+  // Visibility mask — computed fresh each frame from hero pos, OR fully-on when revealMap.
+  const visible = revealMap || !hero
+    ? null
+    : computeVisible(floor, hero.pos)
+
+  // Fold visible tiles into the seen-memory bitset so dim tiles persist.
+  if (visible && seenTiles && seenTiles.length === floor.tiles.length) {
+    for (let i = 0; i < visible.length; i++) {
+      if (visible[i]) seenTiles[i] = 1
+    }
+  }
+
   // Fill background before any translate so it always covers the full canvas.
   ctx.fillStyle = palette.obsidianBlack
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
@@ -28,9 +45,23 @@ export function renderWorld(
   ctx.translate(shakeOffset.x - cameraOffset.x, shakeOffset.y - cameraOffset.y)
   ctx.imageSmoothingEnabled = false
   const atlasReady = isAtlasReady()
+
+  function tileVisState(idx: number): 'visible' | 'seen' | 'unknown' {
+    if (!visible) return 'visible'                // revealMap on
+    if (visible[idx]) return 'visible'
+    if (seenTiles && seenTiles[idx]) return 'seen'
+    return 'unknown'
+  }
+
   for (let y = 0; y < floor.height; y++) {
     for (let x = 0; x < floor.width; x++) {
-      const t = floor.tiles[y * floor.width + x]
+      const idx = y * floor.width + x
+      const vis = tileVisState(idx)
+      if (vis === 'unknown') continue  // stay void-black
+
+      ctx.globalAlpha = vis === 'seen' ? 0.35 : 1
+
+      const t = floor.tiles[idx]
       if (t === Tile.Floor) {
         if (atlasReady) {
           drawTileSprite(ctx, 'floor_1', x, y, tileSize)
@@ -68,6 +99,12 @@ export function renderWorld(
       }
     }
   }
+  ctx.globalAlpha = 1
+
+  function posVisible(x: number, y: number): boolean {
+    if (!visible) return true
+    return visible[y * floor.width + x] === 1
+  }
 
   if (showHeroPath && state.heroPath.length > 0) {
     ctx.fillStyle = palette.silkFlameAmber
@@ -82,10 +119,11 @@ export function renderWorld(
     ctx.globalAlpha = 1
   }
 
-  // Dropped items — drawn under actors with a soft bob.
+  // Dropped items — only shown in currently-visible tiles (memory doesn't persist items).
   if (atlasReady) {
     const bob = Math.sin(performance.now() / 400) * tileSize * 0.08
     for (const item of state.droppedItems) {
+      if (!posVisible(item.pos.x, item.pos.y)) continue
       const sprite = itemSpriteName(item.kind)
       if (!sprite) continue
       const cx = item.pos.x * tileSize + tileSize / 2
@@ -100,6 +138,8 @@ export function renderWorld(
   for (const d of display.all()) {
     const actor = state.actors[d.id]
     if (!actor || !actor.alive) continue
+    // Actors in unseen tiles are hidden — hero always shown regardless.
+    if (actor.id !== state.heroId && !posVisible(actor.pos.x, actor.pos.y)) continue
     const def = getArchetype(actor.archetype)
     const cx = d.x * tileSize + tileSize / 2
     const cy = d.y * tileSize + tileSize / 2

@@ -24,10 +24,16 @@ import { computeCameraOffset } from './render/camera'
 import type { CameraOffset } from './render/camera'
 import { appendDevLog, resetDevLog, logDevEvent, setRunId, setStreamingEnabled } from './dev/runLog'
 import { loadAtlas } from './render/sprites'
+import { computeVisible } from './render/fov'
+import { mountMinimap } from './ui/minimap'
 
 const TILE_SIZE = 24
 const PARTICLE_CAP = 500
 const BASE_TICK_MS = 300
+
+function floorKey(w: { run: { depth: number }; seed: string }): string {
+  return `${w.seed}:${w.run.depth}`
+}
 
 function randomSeed(): string {
   const bytes = new Uint8Array(8)
@@ -106,6 +112,7 @@ async function main(): Promise<void> {
 
   const hud = mountHud(hudContainer)
   hud.onDescend(() => loop.submit({ type: 'Descend' }))
+  const minimap = mountMinimap(hudContainer)
   const overlay = mountOverlay(hudContainer)
   let targetingCardId: string | null = null
   const cardHand = mountCardHand(
@@ -140,6 +147,10 @@ async function main(): Promise<void> {
   // Camera offset — updated each frame; read by dev input handler.
   let cameraOffset: CameraOffset = { x: 0, y: 0 }
 
+  // Per-floor memory: tiles the hero has ever seen. Reset when the floor changes.
+  let seenTiles = new Uint8Array(world.floor.width * world.floor.height)
+  let lastFloorKey = floorKey(world)
+
   // Mutable state for DB bookkeeping — updated on restart
   let currentRunId = runId
   let logOffset = resumedFromLog.length
@@ -162,18 +173,26 @@ async function main(): Promise<void> {
         state.floor.width,
         state.floor.height,
       )
+      // Reset fog memory whenever the floor swaps.
+      const nextKey = floorKey(state)
+      if (nextKey !== lastFloorKey) {
+        seenTiles = new Uint8Array(state.floor.width * state.floor.height)
+        lastFloorKey = nextKey
+      }
       renderWorld(worldCtx, state, display, {
         tileSize: TILE_SIZE,
         shakeOffset: fx.currentShakeOffset(),
         cameraOffset,
         showHeroPath: flags.get().showHeroPath,
         revealMap: flags.get().revealMap,
+        seenTiles,
       })
       fx.draw(cameraOffset)
       hud.update(state)
       overlay.update(state)
       cardReward.update(state)
       cardHand.update(state)
+      minimap.update(state, seenTiles, flags.get().revealMap)
       devMenu.setFps(emaFps)
     },
     {
@@ -203,13 +222,29 @@ async function main(): Promise<void> {
     const newWorld = createInitialWorld(newSeed)
     loop.replaceState(newWorld)
     display.sync(loop.getState())
+    seenTiles = new Uint8Array(newWorld.floor.width * newWorld.floor.height)
+    lastFloorKey = floorKey(newWorld)
     await dbClient.startRun(newRunId, newSeed)
+  }
+
+  function tileIsKnown(s: typeof world, tile: { x: number; y: number }): boolean {
+    if (flags.get().revealMap) return true
+    if (tile.x < 0 || tile.y < 0 || tile.x >= s.floor.width || tile.y >= s.floor.height) return false
+    const idx = tile.y * s.floor.width + tile.x
+    if (seenTiles[idx]) return true
+    // Current FOV — freshly computed if hero moved this frame but seenTiles hasn't folded it in yet.
+    const hero = s.actors[s.heroId]
+    if (!hero) return false
+    const vis = computeVisible(s.floor, hero.pos)
+    return vis[idx] === 1
   }
 
   attachDevInput(worldCanvas, TILE_SIZE, {
     onTileClick(tile) {
       const s = loop.getState()
       if (s.phase !== 'exploring') return
+      // Block interaction with tiles the hero hasn't discovered.
+      if (!tileIsKnown(s, tile)) return
       // If targeting mode is active, try to play card on enemy at tile
       if (targetingCardId) {
         const actor = Object.values(s.actors).find(a => a.pos.x === tile.x && a.pos.y === tile.y && a.kind === 'enemy')
