@@ -1,5 +1,6 @@
-import { Tile, type World, type Action, type Actor, type ActorId, type Pos, type DroppedItem } from '../types'
+import { Tile, type World, type Action, type Actor, type ActorId, type Pos } from '../types'
 import { getLoreFragment } from '../../content/loreLoader'
+import { instantiateItem } from '../../content/itemLoader'
 
 export function moveActor(state: World, action: Extract<Action, { type: 'MoveActor' }>): World {
   const actor = state.actors[action.actorId]
@@ -14,15 +15,18 @@ export function moveActor(state: World, action: Extract<Action, { type: 'MoveAct
   if (blocker && !isHeroSwap) return state
 
   const movedActor = { ...actor, pos: action.to }
-  let droppedItems = state.droppedItems
-  let finalActor: Actor = movedActor
+  const finalActor: Actor = movedActor
+
+  let inventory = state.inventory
+  let groundItems = state.groundItems
 
   // Only the hero can pick up items (simplifies the rules + prevents enemies eating potions).
   if (actor.id === state.heroId) {
-    const itemHere = droppedItems.find(it => it.pos.x === action.to.x && it.pos.y === action.to.y)
-    if (itemHere) {
-      finalActor = applyItemToHero(movedActor, itemHere)
-      droppedItems = droppedItems.filter(it => it.id !== itemHere.id)
+    const groundIdx = groundItems.findIndex(g => g.pos.x === action.to.x && g.pos.y === action.to.y)
+    if (groundIdx >= 0 && inventory.length < 6) {
+      const ground = groundItems[groundIdx]
+      inventory = [...inventory, instantiateItem(ground.itemId, ground.instanceId)]
+      groundItems = groundItems.filter((_, i) => i !== groundIdx)
     }
   }
 
@@ -36,7 +40,8 @@ export function moveActor(state: World, action: Extract<Action, { type: 'MoveAct
 
   let stateSoFar: World = {
     ...state,
-    droppedItems,
+    inventory,
+    groundItems,
     actors: actorsUpdated,
   }
 
@@ -77,17 +82,6 @@ export function moveActor(state: World, action: Extract<Action, { type: 'MoveAct
   }
 
   return stateSoFar
-}
-
-function applyItemToHero(hero: Actor, item: DroppedItem): Actor {
-  switch (item.kind) {
-    case 'flask-red':
-      return { ...hero, hp: Math.min(hero.maxHp, hero.hp + 5) }
-    case 'flask-yellow':
-      return { ...hero, atk: hero.atk + 1 }
-    case 'flask-blue':
-      return { ...hero, def: hero.def + 1 }
-  }
 }
 
 function isAdjacent(a: Pos, b: Pos): boolean {

@@ -1,50 +1,9 @@
 import { describe, it, expect } from 'bun:test'
 import { createInitialWorld } from '../../../src/core/state'
 import { dispatch } from '../../../src/core/dispatch'
-import type { Actor, DroppedItem, World } from '../../../src/core/types'
+import type { Actor, World } from '../../../src/core/types'
 
 describe('item drops', () => {
-  it('preloaded flask-red heals 5 HP when hero steps onto it', () => {
-    const base = createInitialWorld('item-heal')
-    const hero = base.actors[base.heroId]
-    const dropPos = { x: hero.pos.x + 1, y: hero.pos.y }
-    const item: DroppedItem = { id: 'drop-1', kind: 'flask-red', pos: dropPos }
-    const state: World = {
-      ...base,
-      actors: { ...base.actors, [hero.id]: { ...hero, hp: 10 } },
-      droppedItems: [item],
-    }
-    const next = dispatch(state, { type: 'MoveActor', actorId: hero.id, to: dropPos })
-    expect(next.actors[hero.id].hp).toBe(15)
-    expect(next.droppedItems.find(it => it.id === 'drop-1')).toBeUndefined()
-  })
-
-  it('flask-yellow grants +1 ATK permanently', () => {
-    const base = createInitialWorld('item-atk')
-    const hero = base.actors[base.heroId]
-    const dropPos = { x: hero.pos.x + 1, y: hero.pos.y }
-    const state: World = {
-      ...base,
-      droppedItems: [{ id: 'd', kind: 'flask-yellow', pos: dropPos }],
-    }
-    const before = state.actors[hero.id].atk
-    const next = dispatch(state, { type: 'MoveActor', actorId: hero.id, to: dropPos })
-    expect(next.actors[hero.id].atk).toBe(before + 1)
-  })
-
-  it('flask-blue grants +1 DEF permanently', () => {
-    const base = createInitialWorld('item-def')
-    const hero = base.actors[base.heroId]
-    const dropPos = { x: hero.pos.x + 1, y: hero.pos.y }
-    const state: World = {
-      ...base,
-      droppedItems: [{ id: 'd', kind: 'flask-blue', pos: dropPos }],
-    }
-    const before = state.actors[hero.id].def
-    const next = dispatch(state, { type: 'MoveActor', actorId: hero.id, to: dropPos })
-    expect(next.actors[hero.id].def).toBe(before + 1)
-  })
-
   it('enemy stepping onto an item does NOT pick it up', () => {
     const base = createInitialWorld('item-enemy-nopick')
     // Find an enemy with a walkable neighbor.
