@@ -1,4 +1,5 @@
 import type { World } from '../core/types'
+import type { CapturedNote } from './midiExport'
 
 export type MusicHandle = {
   start(): void
@@ -6,6 +7,7 @@ export type MusicHandle = {
   setVolume(v: number): void
   setMoodForDepth(depth: number): void
   setWorldRef(get: () => World): void
+  getCapture(): { notes: CapturedNote[]; bpm: number; depth: number }
 }
 
 type Mood = { scale: readonly number[]; bpm: number; root: number; bossHarmony: boolean }
@@ -46,6 +48,16 @@ export function createMusic(seed: string): MusicHandle {
   let rngState = hash(seed)
   let getWorld: (() => World) | null = null
 
+  const CAPTURE_CAP = 4096
+  let captureStart = performance.now()
+  let capture: CapturedNote[] = []
+  let captureDepth = 1
+
+  function captureNote(voice: CapturedNote['voice'], freq: number, durMs: number, gain: number): void {
+    if (capture.length >= CAPTURE_CAP) capture.shift()
+    capture.push({ timeMs: performance.now() - captureStart, freq, durMs, gain, voice })
+  }
+
   function combatLevel(): 'explore' | 'combat' {
     if (!getWorld) return 'explore'
     const w = getWorld()
@@ -82,6 +94,7 @@ export function createMusic(seed: string): MusicHandle {
   }
 
   function playMelody(freq: number, durMs: number): void {
+    captureNote('melody', freq, durMs, 0.08)
     const osc = ctx.createOscillator(), env = ctx.createGain()
     osc.type = 'triangle'; osc.frequency.value = freq
     env.gain.setValueAtTime(0, ctx.currentTime)
@@ -92,6 +105,7 @@ export function createMusic(seed: string): MusicHandle {
   }
 
   function playBass(freq: number, durMs: number): void {
+    captureNote('bass', freq, durMs, 0.12)
     const osc = ctx.createOscillator(), env = ctx.createGain(), lp = ctx.createBiquadFilter()
     osc.type = 'sawtooth'; osc.frequency.value = freq
     lp.type = 'lowpass'; lp.frequency.value = 600
@@ -103,6 +117,7 @@ export function createMusic(seed: string): MusicHandle {
   }
 
   function playArp(freq: number, durMs: number): void {
+    captureNote('arp', freq, durMs, 0.06)
     const osc = ctx.createOscillator(), env = ctx.createGain()
     osc.type = 'square'; osc.frequency.value = freq
     env.gain.setValueAtTime(0, ctx.currentTime)
@@ -113,7 +128,8 @@ export function createMusic(seed: string): MusicHandle {
   }
 
   function playPerc(kind: 'kick' | 'hat'): void {
-    // Short noise burst through bandpass.
+    const voice: CapturedNote['voice'] = kind === 'kick' ? 'perc-kick' : 'perc-hat'
+    captureNote(voice, 0, kind === 'kick' ? 120 : 50, 0.5)
     const dur = kind === 'kick' ? 0.12 : 0.05
     const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate)
     const data = buf.getChannelData(0)
@@ -130,6 +146,8 @@ export function createMusic(seed: string): MusicHandle {
   }
 
   function playHarmony(freq: number, durMs: number): void {
+    // Harmony reuses 'bass' track for MIDI export (no separate channel allocated).
+    captureNote('bass', freq, durMs, 0.06)
     const osc = ctx.createOscillator(), env = ctx.createGain()
     osc.type = 'sine'; osc.frequency.value = freq
     env.gain.setValueAtTime(0, ctx.currentTime)
@@ -201,7 +219,13 @@ export function createMusic(seed: string): MusicHandle {
     setMoodForDepth(d) {
       mood = MOODS[d] ?? MOODS[5]
       harmonyGain.gain.setTargetAtTime(mood.bossHarmony ? 0.5 : 0.0, ctx.currentTime, 0.5)
+      capture = []
+      captureStart = performance.now()
+      captureDepth = d
     },
     setWorldRef(get) { getWorld = get },
+    getCapture() {
+      return { notes: capture.slice(), bpm: mood.bpm, depth: captureDepth }
+    },
   }
 }
