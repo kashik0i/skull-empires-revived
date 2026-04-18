@@ -65,9 +65,9 @@ loreScrolls: { id: string; pos: Pos; fragmentIndex: number }[]
 
 Scroll rendering reuses the existing `droppedItems` code path — renderer loops over `loreScrolls` and calls `drawSprite('scroll_open_anim_f0', ...)` with the same bob animation.
 
-**Pickup.** Handled in the `moveActor` reducer exactly like items: when the hero steps onto a scroll tile, the scroll is removed and a dialog modal is queued via a new transient field `world.pendingDialog`.
+**Pickup.** Handled atomically in the `moveActor` reducer exactly like items: when the hero steps onto a scroll tile, the scroll is removed from `loreScrolls` and a dialog modal is queued via a new transient field `world.pendingDialog`. No separate `PickupScroll` action — replay determinism is already provided by the `MoveActor` action that triggered the step.
 
-`pendingDialog` is `{ title: string; body: string; actions: { label: string; resolve: Action | null }[] } | null`. The UI reads this; when the player closes the modal, the UI dispatches a new `ClearDialog` action (or the chosen `resolve` action if any).
+`pendingDialog` is `{ title: string; body: string; actions: { label: string; resolve: Action | null }[] } | null`. The UI reads this; when the player closes the modal, the UI dispatches a `ClearDialog` action (or the chosen `resolve` action if any, followed by `ClearDialog`).
 
 **Lore content.** Four hand-authored fragments in a new file `src/content/lore.json`:
 
@@ -174,7 +174,6 @@ New `Action` variants:
 | { type: 'OpenMerchantDialog'; merchantId: ActorId }
 | { type: 'MerchantTrade'; cardId: string; merchantId: ActorId }
 | { type: 'ResolveShrine'; choice: 'blood' | 'breath'; pos: Pos }
-| { type: 'PickupScroll'; scrollId: string }
 | { type: 'ClearDialog' }
 ```
 
@@ -184,21 +183,20 @@ New `HeroIntent` variant:
 | { kind: 'interact'; targetId: ActorId }
 ```
 
-(`PickupScroll` is separate from the generic move-onto-scroll side effect so replay remains deterministic even if the UI dismisses the dialog late.)
 
 ## File changes
 
 **Create:**
 - `src/content/lore.json` — 4 lore fragments.
 - `src/ui/dialog.ts` — generic modal component.
-- `src/core/reducers/dialog.ts` — handles `ClearDialog`, `ResolveShrine`, `MerchantTrade`, `PickupScroll`.
+- `src/core/reducers/dialog.ts` — handles `ClearDialog`, `OpenMerchantDialog`, `ResolveShrine`, `MerchantTrade`.
 - `tests/core/reducers/dialog.test.ts`.
 - `tests/core/reducers/npc.test.ts` — attack reducer rejects NPC as target.
 - `tests/procgen/shrine.test.ts` — 25% shrine rate verified over many seeds.
 
 **Modify:**
 - `src/core/types.ts` — new kinds, new tile, new actions, new World fields.
-- `src/core/state.ts` — init `loreScrolls: []`, `pendingDialog: null`; new `spawnNpc` helper; merchant wired on depth 1 only if depth matches.
+- `src/core/state.ts` — init `loreScrolls: []`, `pendingDialog: null`; new `spawnNpc` helper. `createInitialWorld` (depth 1) places no merchant; `spawnNpc` is called by `descend.ts` only when newDepth ∈ {2, 4}.
 - `src/core/reducers/index.ts` — wire new action handlers.
 - `src/core/reducers/attack.ts` — reject NPC target.
 - `src/core/reducers/move.ts` — handle step-onto-shrine and step-onto-scroll by emitting `pendingDialog`.
@@ -234,7 +232,7 @@ Integration test:
 
 - On floor 2 or 4 a merchant sprite is visible; clicking opens modal; picking a card adds it to the deck; merchant gone after.
 - Floors 1-4 each place exactly one scroll; walking onto it pops a 1-paragraph lore modal.
-- Some runs feature a shrine (dev-verifiable by setting a high seed count); choosing Blood or Breath applies the permanent effect.
+- At ~25% per non-boss floor, expect ~1 shrine per 4-floor run on average; choosing Blood or Breath applies the permanent effect and the shrine tile converts to Floor.
 - 9 cards available in the pool; all three new cards playable when drawn.
 - All existing tests still pass; new tests green.
 - `bun run build` clean; `bun run typecheck` clean.
