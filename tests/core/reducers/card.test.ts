@@ -120,6 +120,47 @@ describe('PlayCard reducer', () => {
     expect(debuff!.remainingTicks).toBe(20)
     expect(w2.run.cards.discard).toContain('curse')
   })
+
+  it('greater-heal restores 12 HP capped at maxHp', () => {
+    const base = createInitialWorld('gh-1')
+    const heroId = base.heroId
+    const hero = base.actors[heroId]
+    const wounded: World = {
+      ...base,
+      actors: { ...base.actors, [heroId]: { ...hero, hp: 5 } },
+      run: { ...base.run, cards: { ...base.run.cards, hand: ['greater-heal'] } },
+    }
+    const action: Action = { type: 'PlayCard', cardId: 'greater-heal' }
+    const next = rootReducer(wounded, action)
+    expect(next.actors[heroId].hp).toBe(17)
+  })
+
+  it('fortify applies buff-def status', () => {
+    const base = createInitialWorld('frt-1')
+    const heroId = base.heroId
+    const state: World = {
+      ...base,
+      run: { ...base.run, cards: { ...base.run.cards, hand: ['fortify'] } },
+    }
+    const action: Action = { type: 'PlayCard', cardId: 'fortify' }
+    const next = rootReducer(state, action)
+    const buffs = next.actors[heroId].statusEffects.filter(s => s.kind === 'buff-def')
+    expect(buffs.length).toBe(1)
+    expect(buffs[0].amount).toBe(2)
+  })
+
+  it('vigor applies buff-atk status', () => {
+    const base = createInitialWorld('vgr-1')
+    const heroId = base.heroId
+    const state: World = {
+      ...base,
+      run: { ...base.run, cards: { ...base.run.cards, hand: ['vigor'] } },
+    }
+    const action: Action = { type: 'PlayCard', cardId: 'vigor' }
+    const next = rootReducer(state, action)
+    const buffs = next.actors[heroId].statusEffects.filter(s => s.kind === 'buff-atk')
+    expect(buffs.some(b => b.amount === 3)).toBe(true)
+  })
 })
 
 describe('OfferCardReward reducer', () => {

@@ -17,11 +17,11 @@ describe('cardLoader', () => {
     }
   })
 
-  it('listCardIds() returns exactly the 6 expected ids', () => {
+  it('listCardIds() returns exactly the 9 expected ids', () => {
     const ids = listCardIds()
-    expect(ids.length).toBe(6)
+    expect(ids.length).toBe(9)
     expect(ids.slice().sort()).toEqual(
-      ['bless', 'curse', 'heal', 'reveal-map', 'smite', 'storm'],
+      ['bless', 'curse', 'fortify', 'greater-heal', 'heal', 'reveal-map', 'smite', 'storm', 'vigor'],
     )
   })
 

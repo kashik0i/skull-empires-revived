@@ -73,6 +73,10 @@ export function playCard(state: World, action: PlayCardAction): World {
     const target = actors[targetActorId!]
     const newEffect: StatusEffect = { kind: 'buff-atk', amount: effect.amount, remainingTicks: effect.durationTicks }
     actors = { ...actors, [targetActorId!]: { ...target, statusEffects: [...target.statusEffects, newEffect] } }
+  } else if (effect.kind === 'buff-def') {
+    const target = actors[targetActorId!]
+    const newEffect: StatusEffect = { kind: 'buff-def', amount: effect.amount, remainingTicks: effect.durationTicks }
+    actors = { ...actors, [targetActorId!]: { ...target, statusEffects: [...target.statusEffects, newEffect] } }
   } else if (effect.kind === 'debuff-def') {
     const target = actors[targetActorId!]
     const newEffect: StatusEffect = { kind: 'debuff-def', amount: effect.amount, remainingTicks: effect.durationTicks }

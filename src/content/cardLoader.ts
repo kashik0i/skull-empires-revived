@@ -4,6 +4,7 @@ export type CardTarget = 'self' | 'enemy' | 'none'
 
 export type CardEffect =
   | { kind: 'buff-atk'; amount: number; durationTicks: number }
+  | { kind: 'buff-def'; amount: number; durationTicks: number }
   | { kind: 'debuff-def'; amount: number; durationTicks: number }
   | { kind: 'heal'; amount: number }
   | { kind: 'direct-damage'; amount: number }
