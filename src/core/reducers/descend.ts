@@ -1,4 +1,4 @@
-import type { World } from '../types'
+import type { World, LoreScroll } from '../types'
 import { Tile } from '../types'
 import type { Floor, Pos } from '../types'
 import { generateFloor } from '../../procgen/floor'
@@ -23,9 +23,11 @@ export function descend(world: World): World {
   const newDepth = world.run.depth + 1
   const isBossFloor = newDepth === 5
 
-  const { floor: newFloor, rng: rng2 } = isBossFloor
-    ? generateBossFloor(world.rng, floor.width, floor.height)
-    : generateFloor(world.rng, floor.width, floor.height, { hasStairs: true })
+  const bossResult = isBossFloor ? generateBossFloor(world.rng, floor.width, floor.height) : null
+  const floorResult = isBossFloor ? null : generateFloor(world.rng, floor.width, floor.height, { hasStairs: true })
+  const newFloor = (bossResult ?? floorResult!).floor
+  const rng2 = (bossResult ?? floorResult!).rng
+  const scrollPos = floorResult?.scrollPos ?? null
 
   const newSpawns = newFloor.spawns
   const heroSpawn = newSpawns[0]
@@ -56,6 +58,10 @@ export function descend(world: World): World {
     }
   }
 
+  const loreScrolls: LoreScroll[] = !isBossFloor && scrollPos
+    ? [{ id: `scroll-d${newDepth}`, pos: scrollPos, fragmentIndex: newDepth - 1 }]
+    : []
+
   return {
     ...world,
     floor: newFloor,
@@ -66,6 +72,7 @@ export function descend(world: World): World {
     turnIndex: 0,
     rng: rng2,
     droppedItems: [],
+    loreScrolls,
     pendingDialog: null,
     run: {
       ...world.run,

@@ -1,5 +1,5 @@
 import { createRng, nextU32 } from './rng'
-import type { Actor, ActorId, Floor, World } from './types'
+import type { Actor, ActorId, Floor, LoreScroll, World } from './types'
 import { generateFloor } from '../procgen/floor'
 import { getArchetype } from '../content/loader'
 import { listCardIds } from '../content/cardLoader'
@@ -124,7 +124,7 @@ export function spawnMerchant(spawns: Floor['spawns'], depth: number): Actor | n
 
 export function createInitialWorld(seed: string): World {
   let rng = createRng(seed)
-  const { floor, rng: rng2 } = generateFloor(rng, FLOOR_W, FLOOR_H)
+  const { floor, rng: rng2, scrollPos } = generateFloor(rng, FLOOR_W, FLOOR_H)
   rng = rng2
 
   const actors: Record<ActorId, Actor> = {}
@@ -156,6 +156,10 @@ export function createInitialWorld(seed: string): World {
   const hand = shuffled.splice(0, 3)
   const deck = shuffled
 
+  const loreScrolls: LoreScroll[] = scrollPos
+    ? [{ id: 'scroll-d1', pos: scrollPos, fragmentIndex: 0 }]
+    : []
+
   const turnOrder = Object.keys(actors)
   return {
     seed,
@@ -172,7 +176,7 @@ export function createInitialWorld(seed: string): World {
     rng,
     revealed: false,
     droppedItems: [],
-    loreScrolls: [],
+    loreScrolls,
     pendingDialog: null,
     run: {
       depth: 1,

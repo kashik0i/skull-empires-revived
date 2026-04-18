@@ -132,6 +132,17 @@ export function renderWorld(
     }
   }
 
+  // Lore scrolls — bobbing animation, only shown in visible tiles.
+  if (atlasReady) {
+    const bob = Math.sin(performance.now() / 400) * tileSize * 0.08
+    for (const scroll of state.loreScrolls) {
+      if (!posVisible(scroll.pos.x, scroll.pos.y)) continue
+      const cx = scroll.pos.x * tileSize + tileSize / 2
+      const cy = scroll.pos.y * tileSize + tileSize / 2 + bob
+      drawSprite(ctx, 'scroll', cx, cy, tileSize)
+    }
+  }
+
   const targetId = state.heroIntent?.kind === 'attack' ? state.heroIntent.targetId : null
   const pulseAlpha = 0.6 + 0.4 * (0.5 + 0.5 * Math.sin(performance.now() / 180))
 

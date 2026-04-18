@@ -1,4 +1,5 @@
 import { Tile, type World, type Action, type Actor, type ActorId, type Pos, type DroppedItem } from '../types'
+import { getLoreFragment } from '../../content/loreLoader'
 
 export function moveActor(state: World, action: Extract<Action, { type: 'MoveActor' }>): World {
   const actor = state.actors[action.actorId]
@@ -20,7 +21,7 @@ export function moveActor(state: World, action: Extract<Action, { type: 'MoveAct
     }
   }
 
-  return {
+  let stateSoFar: World = {
     ...state,
     droppedItems,
     actors: {
@@ -28,6 +29,26 @@ export function moveActor(state: World, action: Extract<Action, { type: 'MoveAct
       [action.actorId]: finalActor,
     },
   }
+
+  // Scroll pickup — hero only.
+  if (actor.id === state.heroId) {
+    const scrollHere = stateSoFar.loreScrolls.find(s => s.pos.x === action.to.x && s.pos.y === action.to.y)
+    if (scrollHere) {
+      const fragment = getLoreFragment(scrollHere.fragmentIndex)
+      const loreScrolls = stateSoFar.loreScrolls.filter(s => s.id !== scrollHere.id)
+      stateSoFar = {
+        ...stateSoFar,
+        loreScrolls,
+        pendingDialog: {
+          title: fragment.title,
+          body: fragment.body,
+          actions: [{ label: 'Onward.', resolve: null }],
+        },
+      }
+    }
+  }
+
+  return stateSoFar
 }
 
 function applyItemToHero(hero: Actor, item: DroppedItem): Actor {
