@@ -51,6 +51,21 @@ async function main(): Promise<void> {
   const fxCtx = fxCanvas.getContext('2d')
   if (!worldCtx || !fxCtx) throw new Error('canvas 2d context unavailable')
 
+  function resizeCanvases(): void {
+    const playEl = document.getElementById('play') as HTMLElement
+    const w = Math.max(64, Math.floor(playEl.clientWidth))
+    const h = Math.max(64, Math.floor(playEl.clientHeight))
+    for (const c of [worldCanvas, fxCanvas]) {
+      if (c.width !== w || c.height !== h) {
+        c.width = w
+        c.height = h
+      }
+    }
+  }
+
+  resizeCanvases()
+  new ResizeObserver(resizeCanvases).observe(document.getElementById('play') as HTMLElement)
+
   // Fire-and-forget — renderer falls back to procedural shapes until this resolves.
   void loadAtlas().catch(err => console.warn('[sprites] atlas failed to load', err))
 
