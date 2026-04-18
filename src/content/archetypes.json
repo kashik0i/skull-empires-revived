@@ -105,5 +105,19 @@
       "head":   { "type": "circle", "y": -0.45, "r": 0.3, "color": "boneWhite" },
       "eyes":   { "type": "eyeDots", "y": -0.45, "spacing": 0.13, "r": 0.05, "color": "bloodCrimson" }
     }
+  },
+  "merchant": {
+    "kind": "npc",
+    "name": "Grim the Wanderer",
+    "hp": 1,
+    "atk": 0,
+    "def": 0,
+    "color": "silkFlameAmber",
+    "sprite": "wizzard_m_idle",
+    "shape": {
+      "body":   { "type": "rect", "w": 0.5, "h": 0.75, "color": "silkFlameAmber", "corner": 0.15 },
+      "head":   { "type": "circle", "y": -0.4, "r": 0.22, "color": "boneWhite" },
+      "eyes":   { "type": "eyeDots", "y": -0.4, "spacing": 0.1, "r": 0.03, "color": "deepPurpleDark" }
+    }
   }
 }

@@ -1,5 +1,5 @@
 import { Tile, type Action, type ActorId, type Pos, type World } from '../core/types'
-import { fullPathToward, manhattan } from './pathfind'
+import { firstStepToward, fullPathToward, manhattan } from './pathfind'
 
 /**
  * Resolve the hero's action(s) for the current turn based on world state + hero intent.
@@ -24,6 +24,23 @@ export function resolveHeroActions(state: World): Action[] {
 
   const intent = state.heroIntent
   if (!intent) return []
+
+  if (intent.kind === 'interact') {
+    const target = state.actors[intent.targetId]
+    if (!target || !target.alive) {
+      return [{ type: 'SetHeroIntent', intent: null }]
+    }
+    if (manhattan(hero.pos, target.pos) === 1) {
+      return [
+        { type: 'OpenMerchantDialog', merchantId: target.id },
+        { type: 'SetHeroIntent', intent: null },
+      ]
+    }
+    // Step toward target; pass through target's tile so BFS can reach adjacent.
+    const step = firstStepToward(state, hero.pos, target.pos, { passThroughActors: [target.id] })
+    if (!step) return [{ type: 'SetHeroIntent', intent: null }]
+    return [{ type: 'MoveActor', actorId: hero.id, to: step }]
+  }
 
   if (intent.kind === 'attack') {
     const target = state.actors[intent.targetId]

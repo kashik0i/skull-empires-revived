@@ -103,6 +103,25 @@ export function spawnBossEncounter(
   return actors
 }
 
+export function spawnMerchant(spawns: Floor['spawns'], depth: number): Actor | null {
+  const hero = spawns[0]
+  if (!hero) return null
+  const id: ActorId = `merchant-d${depth}`
+  const def = getArchetype('merchant')
+  return {
+    id,
+    kind: 'npc',
+    archetype: 'merchant',
+    pos: { x: hero.x + 2, y: hero.y },
+    hp: def.hp,
+    maxHp: def.hp,
+    atk: def.atk,
+    def: def.def,
+    alive: true,
+    statusEffects: [],
+  }
+}
+
 export function createInitialWorld(seed: string): World {
   let rng = createRng(seed)
   const { floor, rng: rng2 } = generateFloor(rng, FLOOR_W, FLOOR_H)

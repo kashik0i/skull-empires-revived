@@ -15,11 +15,14 @@ export function intentForClick(state: World, tile: Pos): Action | null {
   const { floor } = state
   if (tile.x < 0 || tile.y < 0 || tile.x >= floor.width || tile.y >= floor.height) return null
 
-  // Click on an alive actor → attack intent
+  // Click on an alive actor → interact (NPC) or attack (enemy) intent
   for (const id in state.actors) {
     if (id === state.heroId) continue
     const a = state.actors[id]
     if (a.alive && a.pos.x === tile.x && a.pos.y === tile.y) {
+      if (a.kind === 'npc') {
+        return { type: 'SetHeroIntent', intent: { kind: 'interact', targetId: id } }
+      }
       return { type: 'SetHeroIntent', intent: { kind: 'attack', targetId: id } }
     }
   }

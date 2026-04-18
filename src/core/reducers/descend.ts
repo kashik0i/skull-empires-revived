@@ -1,8 +1,9 @@
 import type { World } from '../types'
 import { Tile } from '../types'
+import type { Floor, Pos } from '../types'
 import { generateFloor } from '../../procgen/floor'
 import { generateBossFloor } from '../../procgen/boss'
-import { spawnEnemiesOnFloor, spawnBossEncounter, compositionForDepth } from '../state'
+import { spawnEnemiesOnFloor, spawnBossEncounter, compositionForDepth, spawnMerchant } from '../state'
 import type { ActorId, Actor } from '../types'
 
 export function descend(world: World): World {
@@ -46,6 +47,15 @@ export function descend(world: World): World {
 
   const turnOrder = Object.keys(actors)
 
+  // Spawn merchant on floors 2 and 4 (non-boss floors only).
+  if (!isBossFloor && (newDepth === 2 || newDepth === 4)) {
+    const m = spawnMerchant(newSpawns, newDepth)
+    if (m && isFloorOrStairsTile(newFloor, m.pos)) {
+      actors[m.id] = m
+      turnOrder.push(m.id)
+    }
+  }
+
   return {
     ...world,
     floor: newFloor,
@@ -56,10 +66,17 @@ export function descend(world: World): World {
     turnIndex: 0,
     rng: rng2,
     droppedItems: [],
+    pendingDialog: null,
     run: {
       ...world.run,
       depth: newDepth,
       rewardedThisFloor: false,
     },
   }
+}
+
+function isFloorOrStairsTile(floor: Floor, p: Pos): boolean {
+  if (p.x < 0 || p.y < 0 || p.x >= floor.width || p.y >= floor.height) return false
+  const t = floor.tiles[p.y * floor.width + p.x]
+  return t === Tile.Floor || t === Tile.Stairs || t === Tile.Shrine
 }

@@ -3,7 +3,7 @@ import type { PaletteKey } from './palette'
 import type { ShapeRecipe } from '../render/shape'
 
 export type ArchetypeDef = {
-  kind: 'hero' | 'enemy'
+  kind: 'hero' | 'enemy' | 'npc'
   name: string
   hp: number
   atk: number
