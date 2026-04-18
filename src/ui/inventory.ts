@@ -5,28 +5,20 @@ export type InventoryMount = {
   update(state: World): void
 }
 
-export function mountInventory(parent: HTMLElement, onAction: (a: Action) => void): InventoryMount {
-  const root = document.createElement('div')
-  root.id = 'inventory-root'
-  Object.assign(root.style, {
-    position: 'absolute',
-    bottom: '12px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    display: 'flex',
-    gap: '14px',
-    alignItems: 'flex-end',
-    zIndex: '4',
-  } satisfies Partial<CSSStyleDeclaration>)
-
+export function mountInventory(equipSlot: HTMLElement, invSlot: HTMLElement, onAction: (a: Action) => void): InventoryMount {
+  // Equipment row (2 slots side by side)
   const equipRow = document.createElement('div')
-  Object.assign(equipRow.style, { display: 'flex', gap: '6px' } satisfies Partial<CSSStyleDeclaration>)
-  const invRow = document.createElement('div')
-  Object.assign(invRow.style, { display: 'flex', gap: '6px' } satisfies Partial<CSSStyleDeclaration>)
+  Object.assign(equipRow.style, { display: 'flex', gap: '6px', justifyContent: 'center' } satisfies Partial<CSSStyleDeclaration>)
+  equipSlot.appendChild(equipRow)
 
-  root.appendChild(equipRow)
-  root.appendChild(invRow)
-  parent.appendChild(root)
+  // Inventory grid (2 rows × 3 cols)
+  const invGrid = document.createElement('div')
+  Object.assign(invGrid.style, {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '6px',
+  } satisfies Partial<CSSStyleDeclaration>)
+  invSlot.appendChild(invGrid)
 
   let lastKey = ''
 
@@ -62,7 +54,7 @@ export function mountInventory(parent: HTMLElement, onAction: (a: Action) => voi
   equipRow.appendChild(armorSlot.el)
 
   const invSlots = Array.from({ length: 6 }, () => makeSlot(''))
-  for (const s of invSlots) invRow.appendChild(s.el)
+  for (const s of invSlots) invGrid.appendChild(s.el)
 
   function update(state: World): void {
     const key = JSON.stringify({
@@ -89,5 +81,5 @@ export function mountInventory(parent: HTMLElement, onAction: (a: Action) => voi
     }
   }
 
-  return { root, update }
+  return { root: equipSlot, update }
 }
