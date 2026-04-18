@@ -44,7 +44,10 @@ const FRAMES: Record<string, SpriteFrame> = {
 
   // Terrain — 16×16 single frames
   floor_1:        { x: 16,  y: 64,  w: 16, h: 16, frames: 1 },
-  wall_mid:       { x: 32,  y: 16,  w: 16, h: 16, frames: 1 },
+  floor_2:        { x: 32,  y: 64,  w: 16, h: 16, frames: 1 },
+  floor_3:        { x: 48,  y: 64,  w: 16, h: 16, frames: 1 },
+  wall_top:       { x: 32,  y: 0,   w: 16, h: 16, frames: 1 },
+  wall_side:      { x: 0,   y: 128, w: 16, h: 16, frames: 1 },
 
   // Items (consumable flasks) — 16×16
   flask_red:      { x: 288, y: 240, w: 16, h: 16, frames: 1 },

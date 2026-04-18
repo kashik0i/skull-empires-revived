@@ -6,6 +6,14 @@ import { drawSprite, drawTileSprite, itemSpriteName, isAtlasReady } from './spri
 import { computeVisible } from './fov'
 import type { DisplayState } from './display'
 
+/**
+ * Deterministic hash for tile (x, y) position to pick a variant.
+ * Returns same value for same (x, y) always.
+ */
+function tileVariantHash(x: number, y: number, n: number): number {
+  return ((x * 73 + y * 37) >>> 0) % n
+}
+
 export type RenderOptions = {
   tileSize: number
   shakeOffset: { x: number; y: number }
@@ -64,21 +72,27 @@ export function renderWorld(
       const t = floor.tiles[idx]
       if (t === Tile.Floor) {
         if (atlasReady) {
-          drawTileSprite(ctx, 'floor_1', x, y, tileSize)
+          const floorVariants = ['floor_1', 'floor_2', 'floor_3']
+          const floorSprite = floorVariants[tileVariantHash(x, y, floorVariants.length)]
+          drawTileSprite(ctx, floorSprite, x, y, tileSize)
         } else {
           ctx.fillStyle = palette.deepPurpleLite
           ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
         }
       } else if (t === Tile.Wall) {
         if (atlasReady) {
-          drawTileSprite(ctx, 'wall_mid', x, y, tileSize)
+          const tileAbove = y > 0 ? floor.tiles[(y - 1) * floor.width + x] : Tile.Wall
+          const wallSprite = tileAbove === Tile.Wall ? 'wall_top' : 'wall_side'
+          drawTileSprite(ctx, wallSprite, x, y, tileSize)
         } else {
           ctx.fillStyle = palette.deepPurple
           ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize)
         }
       } else if (t === Tile.Stairs) {
         if (atlasReady) {
-          drawTileSprite(ctx, 'floor_1', x, y, tileSize)
+          const stairsVariants = ['floor_1', 'floor_2', 'floor_3']
+          const stairsSprite = stairsVariants[tileVariantHash(x, y, stairsVariants.length)]
+          drawTileSprite(ctx, stairsSprite, x, y, tileSize)
         } else {
           ctx.fillStyle = palette.deepPurpleLite
           ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
@@ -98,7 +112,9 @@ export function renderWorld(
         }
       } else if (t === Tile.Shrine) {
         if (atlasReady) {
-          drawTileSprite(ctx, 'floor_1', x, y, tileSize)
+          const shrineVariants = ['floor_1', 'floor_2', 'floor_3']
+          const shrineSprite = shrineVariants[tileVariantHash(x, y, shrineVariants.length)]
+          drawTileSprite(ctx, shrineSprite, x, y, tileSize)
         } else {
           ctx.fillStyle = palette.deepPurpleLite
           ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
