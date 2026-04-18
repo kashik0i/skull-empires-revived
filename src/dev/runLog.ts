@@ -35,7 +35,7 @@ export function resetDevLog(runId?: string): void {
   // Drop any in-flight batch for a prior run.
   buffer = []
   if (flushTimer !== null) { clearTimeout(flushTimer); flushTimer = null }
-  import.meta.hot?.send('skull-log:reset', { runId: id })
+  ;(import.meta.hot as { send?: (event: string, data: unknown) => void } | undefined)?.send?.('skull-log:reset', { runId: id })
 }
 
 export function appendDevLog(action: Action, state: World, idx: number, source: 'runtime' | 'replay' = 'runtime'): void {
@@ -70,7 +70,7 @@ function flush(): void {
   if (buffer.length === 0 || !currentRunId) return
   const entries = buffer
   buffer = []
-  import.meta.hot?.send('skull-log:batch', { runId: currentRunId, entries })
+  ;(import.meta.hot as { send?: (event: string, data: unknown) => void } | undefined)?.send?.('skull-log:batch', { runId: currentRunId, entries })
 }
 
 // Best-effort flush on page unload so the last batch isn't lost.
