@@ -17,6 +17,7 @@ import { wireAudio } from './audio/subscribe'
 import { createMusic } from './audio/music'
 import { createFlags } from './dev/flags'
 import { mountDevMenu, attachDevMenuHotkey } from './ui/devMenu'
+import { encodeMidi, downloadMidi } from './audio/midiExport'
 import { createDbClient } from './persistence/db/client'
 import { resolveInitialRun } from './persistence/autoResume'
 import { computeCameraOffset } from './render/camera'
@@ -151,6 +152,17 @@ async function main(): Promise<void> {
   const devMenu = mountDevMenu(modalEl, flags)
   devMenu.setRunId(runId)
   attachDevMenuHotkey(devMenu)
+
+  devMenu.onExportMidi(() => {
+    const cap = music.getCapture()
+    if (cap.notes.length === 0) {
+      console.warn('[midi] capture buffer empty — play for a few seconds first')
+      return
+    }
+    const bytes = encodeMidi(cap.notes, cap.bpm)
+    const filename = `skull-empires-${world.seed}-d${cap.depth}.mid`
+    downloadMidi(bytes, filename)
+  })
 
   document.addEventListener('visibilitychange', () => {
     musicCtl.setMuted(document.hidden)
