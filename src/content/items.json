@@ -1,0 +1,12 @@
+[
+  { "id": "heal-small", "name": "Lesser Vial", "sprite": "flask_red", "body": { "kind": "potion", "effect": { "type": "heal", "amount": 5 } } },
+  { "id": "heal-large", "name": "Greater Vial", "sprite": "flask_big_red", "body": { "kind": "potion", "effect": { "type": "heal", "amount": 12 } } },
+  { "id": "strength-tonic", "name": "Strength Tonic", "sprite": "flask_yellow", "body": { "kind": "potion", "effect": { "type": "buff-atk", "amount": 2, "durationTicks": 5 } } },
+  { "id": "iron-tonic", "name": "Iron Tonic", "sprite": "flask_blue", "body": { "kind": "potion", "effect": { "type": "buff-def", "amount": 2, "durationTicks": 5 } } },
+  { "id": "rusty-blade", "name": "Rusty Blade", "sprite": "weapon_rusty_sword", "body": { "kind": "weapon", "atk": 1 } },
+  { "id": "iron-blade", "name": "Iron Blade", "sprite": "weapon_regular_sword", "body": { "kind": "weapon", "atk": 2 } },
+  { "id": "ember-blade", "name": "Ember Blade", "sprite": "weapon_red_gem_sword", "body": { "kind": "weapon", "atk": 3 } },
+  { "id": "cloth-rags", "name": "Cloth Rags", "sprite": "armor_cloth", "body": { "kind": "armor", "def": 1 } },
+  { "id": "leather-vest", "name": "Leather Vest", "sprite": "armor_leather", "body": { "kind": "armor", "def": 2 } },
+  { "id": "plate-mail", "name": "Plate Mail", "sprite": "armor_plate", "body": { "kind": "armor", "def": 3 } }
+]
