@@ -2,6 +2,7 @@ import { Tile, type World } from '../core/types'
 import { getArchetype } from '../content/loader'
 import { palette } from '../content/palette'
 import { drawShape } from './shape'
+import { drawSprite, drawTileSprite, isAtlasReady } from './sprites'
 import type { DisplayState } from './display'
 
 export type RenderOptions = {
@@ -25,18 +26,32 @@ export function renderWorld(
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
   ctx.save()
   ctx.translate(shakeOffset.x - cameraOffset.x, shakeOffset.y - cameraOffset.y)
+  ctx.imageSmoothingEnabled = false
+  const atlasReady = isAtlasReady()
   for (let y = 0; y < floor.height; y++) {
     for (let x = 0; x < floor.width; x++) {
       const t = floor.tiles[y * floor.width + x]
       if (t === Tile.Floor) {
-        ctx.fillStyle = palette.deepPurpleLite
-        ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
+        if (atlasReady) {
+          drawTileSprite(ctx, 'floor_1', x, y, tileSize)
+        } else {
+          ctx.fillStyle = palette.deepPurpleLite
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
+        }
       } else if (t === Tile.Wall) {
-        ctx.fillStyle = palette.deepPurple
-        ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize)
+        if (atlasReady) {
+          drawTileSprite(ctx, 'wall_mid', x, y, tileSize)
+        } else {
+          ctx.fillStyle = palette.deepPurple
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize)
+        }
       } else if (t === Tile.Stairs) {
-        ctx.fillStyle = palette.deepPurpleLite
-        ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
+        if (atlasReady) {
+          drawTileSprite(ctx, 'floor_1', x, y, tileSize)
+        } else {
+          ctx.fillStyle = palette.deepPurpleLite
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
+        }
         ctx.fillStyle = palette.silkFlameAmber
         const pad = Math.max(2, Math.floor(tileSize * 0.15))
         const steps = 3
@@ -87,7 +102,10 @@ export function renderWorld(
       ctx.globalAlpha = 1
     }
 
-    drawShape(ctx, def.shape, cx, cy, tileSize, key => palette[key])
+    const drewSprite = atlasReady && def.sprite ? drawSprite(ctx, def.sprite, cx, cy, tileSize) : false
+    if (!drewSprite) {
+      drawShape(ctx, def.shape, cx, cy, tileSize, key => palette[key])
+    }
 
     if (revealMap && actor.kind === 'enemy') {
       ctx.fillStyle = palette.silkFlameAmber

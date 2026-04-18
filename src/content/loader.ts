@@ -10,6 +10,7 @@ export type ArchetypeDef = {
   def: number
   color: PaletteKey
   behavior?: string
+  sprite?: string
   shape: ShapeRecipe
 }
 

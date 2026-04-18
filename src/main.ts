@@ -23,6 +23,7 @@ import { resolveInitialRun } from './persistence/autoResume'
 import { computeCameraOffset } from './render/camera'
 import type { CameraOffset } from './render/camera'
 import { appendDevLog, resetDevLog, logDevEvent } from './dev/runLog'
+import { loadAtlas } from './render/sprites'
 
 const TILE_SIZE = 24
 const PARTICLE_CAP = 500
@@ -41,6 +42,9 @@ async function main(): Promise<void> {
   const worldCtx = worldCanvas.getContext('2d')
   const fxCtx = fxCanvas.getContext('2d')
   if (!worldCtx || !fxCtx) throw new Error('canvas 2d context unavailable')
+
+  // Fire-and-forget — renderer falls back to procedural shapes until this resolves.
+  void loadAtlas().catch(err => console.warn('[sprites] atlas failed to load', err))
 
   const params = new URLSearchParams(window.location.search)
   const runParam = params.get('run')
