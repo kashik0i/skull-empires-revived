@@ -140,7 +140,7 @@ async function main(): Promise<void> {
   const minimap = mountMinimap(panel.slot('minimap'))
   const hud = mountHud(panel.slot('stats'), panel.slot('descend'), playEl)
   const inventory = mountInventory(panel.slot('equipment'), panel.slot('inventory'), (a) => loop.submit(a))
-  mountMusicControls(panel.slot('music'), music)
+  const musicCtl = mountMusicControls(panel.slot('music'), music)
   hud.onDescend(() => loop.submit({ type: 'Descend' }))
 
   const overlay = mountOverlay(modalEl)
@@ -149,6 +149,10 @@ async function main(): Promise<void> {
   const devMenu = mountDevMenu(modalEl, flags)
   devMenu.setRunId(runId)
   attachDevMenuHotkey(devMenu)
+
+  document.addEventListener('visibilitychange', () => {
+    musicCtl.setMuted(document.hidden)
+  })
 
   // FPS tracker: exponential moving average of 1/dtMs.
   let emaFps = 60
