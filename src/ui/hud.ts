@@ -125,6 +125,14 @@ export function mountHud(container: HTMLElement): Hud {
   // Lines we don't want cluttering the log.
   const NOISE_PREFIXES = ['turn advance', 'hero intent', 'hero path']
 
+  // Per-line fade state: each entry lives for FADE_LIFE_MS then is removed.
+  // Note: chenglou/pretext could be layered in later for precise multi-line
+  // layout without reflow if the log ever needs wrapping; overkill today.
+  const FADE_LIFE_MS = 6000
+  type LogLine = { key: string; text: string; bornAt: number; el: HTMLDivElement }
+  const liveLines: LogLine[] = []
+  let lastLogLen = 0
+
   function update(state: World): void {
     const hero = state.actors[state.heroId]
     if (hero) {
@@ -145,18 +153,40 @@ export function mountHud(container: HTMLElement): Hud {
       && state.floor.tiles[hero.pos.y * state.floor.width + hero.pos.x] === Tile.Stairs
     descendBtn.style.display = heroOnStairs ? 'block' : 'none'
 
-    // Filter + fade log lines
-    logPanel.replaceChildren()
-    const filtered = state.log.filter(l => !NOISE_PREFIXES.some(p => l.text.startsWith(p))).slice(-5)
-    for (let i = 0; i < filtered.length; i++) {
-      const line = document.createElement('div')
-      line.textContent = filtered[i].text
-      const age = filtered.length - 1 - i
-      line.style.opacity = String(1 - age * 0.18)
-      line.style.whiteSpace = 'nowrap'
-      line.style.overflow = 'hidden'
-      line.style.textOverflow = 'ellipsis'
-      logPanel.appendChild(line)
+    // Ingest any new log entries since last update (state.log only grows).
+    if (state.log.length !== lastLogLen) {
+      const now = performance.now()
+      for (let i = lastLogLen; i < state.log.length; i++) {
+        const entry = state.log[i]
+        if (NOISE_PREFIXES.some(p => entry.text.startsWith(p))) continue
+        const el = document.createElement('div')
+        el.textContent = entry.text
+        Object.assign(el.style, {
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          transition: 'opacity 200ms linear',
+        } satisfies Partial<CSSStyleDeclaration>)
+        logPanel.appendChild(el)
+        liveLines.push({ key: `${entry.tick}-${i}`, text: entry.text, bornAt: now, el })
+      }
+      lastLogLen = state.log.length
+    }
+
+    // Fade each live line based on age, drop fully-faded lines.
+    const now = performance.now()
+    for (let i = liveLines.length - 1; i >= 0; i--) {
+      const line = liveLines[i]
+      const age = now - line.bornAt
+      if (age >= FADE_LIFE_MS) {
+        line.el.remove()
+        liveLines.splice(i, 1)
+        continue
+      }
+      // Smoothstep-like easing: full opacity for 60% of life, then linear fade.
+      const held = FADE_LIFE_MS * 0.4
+      const opacity = age < held ? 1 : 1 - (age - held) / (FADE_LIFE_MS - held)
+      line.el.style.opacity = opacity.toFixed(3)
     }
   }
 
