@@ -105,3 +105,36 @@ adjacent enemies when you want to.
    state and any completed stat changes.
 7. Boss floor (5) — no merchant, no scroll, no shrine. Win condition
    unchanged.
+
+## Phase 1E — Inventory & Equipment
+
+Spec: `docs/plans/2026-04-18-phase-1e-design.md`.
+Plan: `docs/plans/2026-04-18-phase-1e-plan.md`.
+
+- **Inventory.** 6 slots, bottom of screen. Click a potion to drink, click
+  a weapon/armor to equip. Click an equipped item to unequip.
+- **Equipment.** Two slots: weapon (+atk) and armor (+def). HUD shows
+  effective ATK/DEF including equipment and active buffs.
+- **Items.** 4 potions + 3 weapon tiers + 3 armor tiers. Enemies drop one
+  ~25% of the time (depth-tiered). Merchant offers 3 items. End-of-floor
+  reward picks 3.
+- **No more cards.** The card system has been replaced. Old saves are
+  auto-wiped on first load (schema upgrade).
+- **Sprite variety.** Walls and floors now show multiple atlas variants.
+  Three new enemy archetypes (chort, wogol, ice-zombie) appear on later
+  floors.
+- **Procedural music.** Ambient pad + melody, per-floor mood. Synthesised
+  in-browser via Web Audio — no audio assets to load.
+
+### Phase 1E smoke checklist
+
+1. First load shows "previous run wiped" log line in console (if a Phase 1D save existed).
+2. Fresh run — inventory empty, no equipment, HP 20/20.
+3. Kill an enemy a few times — eventually one drops a flask sprite on the ground; walk onto it → goes into inventory.
+4. Click the flask in inventory → HP restored, slot clears.
+5. Pick up a weapon → click in inventory → equipped, HUD ATK goes up by the weapon's bonus.
+6. Click the equipped weapon → unequipped, slot returns to inventory, HUD ATK drops.
+7. Descend to floor 2 → merchant appears; click → modal shows 3 items; pick one → goes into inventory.
+8. Floors show multiple wall + floor sprite variants (visual diversity).
+9. Audio plays on first interaction; pitch/tempo changes on descend; volume slider in dev menu controls it.
+10. Tests: `bun test` → all green. Typecheck + build clean.
