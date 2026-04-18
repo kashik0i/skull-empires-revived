@@ -14,13 +14,23 @@ describe('runOutcome', () => {
     expect(runOutcome(w)).toBe('lost')
   })
 
-  it("returns 'won' when all enemies are dead", () => {
+  it("returns 'won' when all enemies are dead on the boss floor", () => {
     const base = createInitialWorld('out-3')
     const actors = { ...base.actors }
     for (const id of Object.keys(actors)) {
       if (actors[id].kind === 'enemy') actors[id] = { ...actors[id], alive: false, hp: 0 }
     }
-    const w = { ...base, actors }
+    const w = { ...base, actors, run: { ...base.run, depth: 5 } }
     expect(runOutcome(w)).toBe('won')
+  })
+
+  it('returns null when enemies are dead on a non-boss floor (card reward pending)', () => {
+    const base = createInitialWorld('out-4')
+    const actors = { ...base.actors }
+    for (const id of Object.keys(actors)) {
+      if (actors[id].kind === 'enemy') actors[id] = { ...actors[id], alive: false, hp: 0 }
+    }
+    const w = { ...base, actors, run: { ...base.run, depth: 1 } }
+    expect(runOutcome(w)).toBeNull()
   })
 })

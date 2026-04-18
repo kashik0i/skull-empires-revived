@@ -1,5 +1,7 @@
 import type { World } from './types'
 
+const BOSS_DEPTH = 5
+
 export function runOutcome(state: World): 'won' | 'lost' | null {
   const hero = state.actors[state.heroId]
   if (!hero || !hero.alive) return 'lost'
@@ -8,6 +10,6 @@ export function runOutcome(state: World): 'won' | 'lost' | null {
     const a = state.actors[id]
     if (a.kind === 'enemy' && a.alive) { anyEnemyAlive = true; break }
   }
-  if (!anyEnemyAlive) return 'won'
+  if (!anyEnemyAlive && state.run.depth >= BOSS_DEPTH) return 'won'
   return null
 }

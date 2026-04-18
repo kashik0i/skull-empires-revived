@@ -29,8 +29,9 @@ export function intentForClick(state: World, tile: Pos): Action | null {
     return { type: 'SetHeroIntent', intent: null }
   }
 
-  // Click on walkable floor → move intent
-  if (floor.tiles[tile.y * floor.width + tile.x] === Tile.Floor) {
+  // Click on walkable floor (or stairs) → move intent
+  const t = floor.tiles[tile.y * floor.width + tile.x]
+  if (t === Tile.Floor || t === Tile.Stairs) {
     return { type: 'SetHeroIntent', intent: { kind: 'move-to', goal: tile } }
   }
 
