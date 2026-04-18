@@ -24,7 +24,8 @@ function isAdjacent(a: Pos, b: Pos): boolean {
 function isWalkable(state: World, p: Pos): boolean {
   const { floor } = state
   if (p.x < 0 || p.y < 0 || p.x >= floor.width || p.y >= floor.height) return false
-  return floor.tiles[p.y * floor.width + p.x] === Tile.Floor
+  const t = floor.tiles[p.y * floor.width + p.x]
+  return t === Tile.Floor || t === Tile.Stairs
 }
 
 function isOccupied(state: World, p: Pos, ignore: ActorId): boolean {

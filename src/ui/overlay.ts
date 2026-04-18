@@ -26,7 +26,9 @@ export function mountOverlay(container: HTMLElement): Overlay {
 
   const title = document.createElement('h1')
   title.style.margin = '0 0 12px 0'
-  title.style.fontSize = '28px'
+  title.style.fontFamily = "'UnifrakturMaguntia', ui-serif, Georgia, serif"
+  title.style.fontSize = '36px'
+  title.style.letterSpacing = '0.03em'
   title.style.color = '#f5e6b0'
 
   const subtitle = document.createElement('div')
