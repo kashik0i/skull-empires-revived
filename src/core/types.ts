@@ -18,11 +18,38 @@ export type StatusEffect =
   | { kind: 'buff-def'; amount: number; remainingTicks: number }
   | { kind: 'debuff-def'; amount: number; remainingTicks: number }
 
-export type ItemKind = 'flask-red' | 'flask-yellow' | 'flask-blue'
+export type EquipmentSlot = 'weapon' | 'armor'
+
+export type PotionEffect =
+  | { type: 'heal'; amount: number }
+  | { type: 'buff-atk'; amount: number; durationTicks: number }
+  | { type: 'buff-def'; amount: number; durationTicks: number }
+
+export type ItemKind =
+  | { kind: 'potion'; effect: PotionEffect }
+  | { kind: 'weapon'; atk: number }
+  | { kind: 'armor'; def: number }
+
+export type Item = {
+  id: string
+  instanceId: string
+  name: string
+  sprite: string
+  body: ItemKind
+}
+
+export type DroppedItemInstance = {
+  instanceId: string
+  itemId: string
+  pos: Pos
+}
+
+/** Legacy flask drop types — removed in T14. */
+export type LegacyItemKind = 'flask-red' | 'flask-yellow' | 'flask-blue'
 
 export type DroppedItem = {
   id: string
-  kind: ItemKind
+  kind: LegacyItemKind
   pos: Pos
 }
 
@@ -91,6 +118,9 @@ export type World = {
   droppedItems: DroppedItem[]
   loreScrolls: LoreScroll[]
   pendingDialog: PendingDialog | null
+  inventory: Item[]
+  equipment: { weapon: Item | null; armor: Item | null }
+  groundItems: DroppedItemInstance[]
   run: {
     depth: number
     cards: RunCards
@@ -116,3 +146,10 @@ export type Action =
   | { type: 'MerchantTrade'; cardId: string; merchantId: ActorId }
   | { type: 'ResolveShrine'; choice: 'blood' | 'breath'; pos: Pos }
   | { type: 'ClearDialog' }
+  | { type: 'UseItem'; instanceId: string }
+  | { type: 'EquipItem'; instanceId: string }
+  | { type: 'UnequipItem'; slot: EquipmentSlot }
+  | { type: 'PickupItem'; instanceId: string }
+  | { type: 'OfferItemReward'; itemIds: string[] }
+  | { type: 'PickItemReward'; itemId: string }
+  | { type: 'MerchantBuyItem'; itemId: string; merchantId: ActorId }

@@ -74,6 +74,7 @@ export function descend(world: World): World {
     droppedItems: [],
     loreScrolls,
     pendingDialog: null,
+    groundItems: [],
     run: {
       ...world.run,
       depth: newDepth,

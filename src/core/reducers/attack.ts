@@ -1,8 +1,8 @@
-import type { World, Action, Actor, Pos, DroppedItem, ItemKind } from '../types'
+import type { World, Action, Actor, Pos, DroppedItem, LegacyItemKind } from '../types'
 import { nextFloat } from '../rng'
 
 const DROP_CHANCE = 0.4
-const DROP_POOL: readonly ItemKind[] = ['flask-red', 'flask-yellow', 'flask-blue']
+const DROP_POOL: readonly LegacyItemKind[] = ['flask-red', 'flask-yellow', 'flask-blue']
 
 /** Sum of buff-atk amounts on an actor's active status effects. */
 function buffAtkBonus(actor: Actor): number {

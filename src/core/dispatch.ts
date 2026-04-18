@@ -74,6 +74,13 @@ function publishDiff(prev: World, next: World, action: Action, bus: FxBus): void
     case 'MerchantTrade':
     case 'ResolveShrine':
     case 'ClearDialog':
+    case 'UseItem':
+    case 'EquipItem':
+    case 'UnequipItem':
+    case 'PickupItem':
+    case 'OfferItemReward':
+    case 'PickItemReward':
+    case 'MerchantBuyItem':
       return
   }
 }
@@ -108,5 +115,12 @@ function describeAction(action: Action, state: World): string {
     case 'MerchantTrade': return `merchant trade: ${action.cardId}`
     case 'ResolveShrine': return `resolved shrine (${action.pos.x},${action.pos.y}): ${action.choice}`
     case 'ClearDialog': return 'dialog cleared'
+    case 'UseItem': return `used item ${action.instanceId}`
+    case 'EquipItem': return `equipped item ${action.instanceId}`
+    case 'UnequipItem': return `unequipped slot ${action.slot}`
+    case 'PickupItem': return `picked up item ${action.instanceId}`
+    case 'OfferItemReward': return `offered item reward: ${action.itemIds.join(', ')}`
+    case 'PickItemReward': return `picked item reward: ${action.itemId}`
+    case 'MerchantBuyItem': return `bought item ${action.itemId} from merchant ${action.merchantId}`
   }
 }

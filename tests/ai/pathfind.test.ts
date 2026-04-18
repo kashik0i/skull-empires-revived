@@ -25,6 +25,9 @@ function emptyWorld(w: number, h: number) {
     droppedItems: [],
     loreScrolls: [],
     pendingDialog: null,
+    inventory: [],
+    equipment: { weapon: null, armor: null },
+    groundItems: [],
     run: {
       depth: 1,
       cards: { deck: [], hand: [], discard: [] },

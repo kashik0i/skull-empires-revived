@@ -178,6 +178,9 @@ export function createInitialWorld(seed: string): World {
     droppedItems: [],
     loreScrolls,
     pendingDialog: null,
+    inventory: [],
+    equipment: { weapon: null, armor: null },
+    groundItems: [],
     run: {
       depth: 1,
       cards: {
