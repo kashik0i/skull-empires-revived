@@ -18,6 +18,9 @@ const FRAMES: Record<string, SpriteFrame> = {
   knight_m_run:   { x: 192, y: 100, w: 16, h: 28, frames: 4 },
   knight_m_hit:   { x: 256, y: 100, w: 16, h: 28, frames: 1 },
 
+  // Merchant NPC — 16×28, 4 idle frames
+  wizzard_m_idle: { x: 128, y: 164, w: 16, h: 28, frames: 4 },
+
   // 16×16 mook tier — 4 idle frames, fits a tile
   skelet_idle:       { x: 368, y: 80,  w: 16, h: 16, frames: 4 },
   skelet_run:        { x: 432, y: 80,  w: 16, h: 16, frames: 4 },
@@ -43,6 +46,9 @@ const FRAMES: Record<string, SpriteFrame> = {
   flask_red:      { x: 288, y: 240, w: 16, h: 16, frames: 1 },
   flask_blue:     { x: 304, y: 240, w: 16, h: 16, frames: 1 },
   flask_yellow:   { x: 336, y: 240, w: 16, h: 16, frames: 1 },
+
+  // Lore scroll pickup — 16×16 (uses flask_green as fallback)
+  scroll:         { x: 320, y: 240, w: 16, h: 16, frames: 1 },
 }
 
 const ITEM_SPRITE: Record<string, string> = {
