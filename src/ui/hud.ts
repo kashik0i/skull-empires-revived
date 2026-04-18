@@ -125,10 +125,12 @@ export function mountHud(container: HTMLElement): Hud {
   // Lines we don't want cluttering the log.
   const NOISE_PREFIXES = ['turn advance', 'hero intent', 'hero path']
 
-  // Per-line fade state: each entry lives for FADE_LIFE_MS then is removed.
-  // Note: chenglou/pretext could be layered in later for precise multi-line
-  // layout without reflow if the log ever needs wrapping; overkill today.
+  // Per-line fade: each line ages from its own bornAt. When the visible set
+  // exceeds MAX_VISIBLE_LINES, the oldest excess are forced into a fast
+  // fade-out so the queue recycles line-by-line instead of all at once.
   const FADE_LIFE_MS = 6000
+  const MAX_VISIBLE_LINES = 5
+  const OVERFLOW_EVICT_MS = 500
   type LogLine = { key: string; text: string; bornAt: number; el: HTMLDivElement }
   const liveLines: LogLine[] = []
   let lastLogLen = 0
@@ -173,8 +175,21 @@ export function mountHud(container: HTMLElement): Hud {
       lastLogLen = state.log.length
     }
 
-    // Fade each live line based on age, drop fully-faded lines.
     const now = performance.now()
+
+    // Overflow: force oldest excess lines into their fade-out phase so only
+    // MAX_VISIBLE_LINES stay at full opacity; they'll fade one-by-one as new
+    // lines arrive rather than the whole batch vanishing together.
+    const overflow = liveLines.length - MAX_VISIBLE_LINES
+    if (overflow > 0) {
+      const forcedBornAt = now - (FADE_LIFE_MS - OVERFLOW_EVICT_MS)
+      for (let i = 0; i < overflow; i++) {
+        const line = liveLines[i]
+        if (line.bornAt > forcedBornAt) line.bornAt = forcedBornAt
+      }
+    }
+
+    // Fade each live line based on age, drop fully-faded lines.
     for (let i = liveLines.length - 1; i >= 0; i--) {
       const line = liveLines[i]
       const age = now - line.bornAt
@@ -183,7 +198,7 @@ export function mountHud(container: HTMLElement): Hud {
         liveLines.splice(i, 1)
         continue
       }
-      // Smoothstep-like easing: full opacity for 60% of life, then linear fade.
+      // Held at full opacity for 40% of life, then linear fade over remaining 60%.
       const held = FADE_LIFE_MS * 0.4
       const opacity = age < held ? 1 : 1 - (age - held) / (FADE_LIFE_MS - held)
       line.el.style.opacity = opacity.toFixed(3)
