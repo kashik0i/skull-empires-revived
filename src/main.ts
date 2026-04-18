@@ -30,6 +30,7 @@ import { mountInventory } from './ui/inventory'
 import { mountItemReward } from './ui/itemReward'
 import { mountSidePanel } from './ui/sidePanel'
 import { mountMusicControls } from './ui/musicControls'
+import { createResponsive } from './dev/responsive'
 
 const TILE_SIZE = 24
 const PARTICLE_CAP = 500
@@ -136,7 +137,8 @@ async function main(): Promise<void> {
   const playEl = document.getElementById('play') as HTMLDivElement
   const modalEl = document.getElementById('modal-layer') as HTMLDivElement
 
-  const panel = mountSidePanel(sidePanelEl)
+  const responsive = createResponsive()
+  const panel = mountSidePanel(sidePanelEl, responsive)
   const minimap = mountMinimap(panel.slot('minimap'))
   const hud = mountHud(panel.slot('stats'), panel.slot('descend'), playEl)
   const inventory = mountInventory(panel.slot('equipment'), panel.slot('inventory'), (a) => loop.submit(a))
@@ -255,6 +257,18 @@ async function main(): Promise<void> {
     const vis = computeVisible(s.floor, hero.pos)
     return vis[idx] === 1
   }
+
+  playEl.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return
+    e.preventDefault()
+    const t = e.touches[0]
+    const synth = new MouseEvent('click', {
+      bubbles: true, cancelable: true,
+      clientX: t.clientX, clientY: t.clientY,
+      button: 0,
+    })
+    worldCanvas.dispatchEvent(synth)
+  }, { passive: false })
 
   attachDevInput(worldCanvas, TILE_SIZE, {
     onTileClick(tile) {
