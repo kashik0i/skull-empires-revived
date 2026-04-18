@@ -26,6 +26,7 @@ import { appendDevLog, resetDevLog, logDevEvent, setRunId, setStreamingEnabled }
 import { loadAtlas } from './render/sprites'
 import { computeVisible } from './render/fov'
 import { mountMinimap } from './ui/minimap'
+import { mountDialog } from './ui/dialog'
 
 const TILE_SIZE = 24
 const PARTICLE_CAP = 500
@@ -136,6 +137,7 @@ async function main(): Promise<void> {
   const cardReward = mountCardReward(hudContainer, (cardId) => {
     loop.submit({ type: 'PickCardReward', cardId })
   })
+  const dialog = mountDialog(hudContainer, (a) => loop.submit(a))
   const devMenu = mountDevMenu(hudContainer, flags)
   devMenu.setRunId(runId)
   attachDevMenuHotkey(devMenu)
@@ -192,6 +194,7 @@ async function main(): Promise<void> {
       overlay.update(state)
       cardReward.update(state)
       cardHand.update(state)
+      dialog.update(state)
       minimap.update(state, seenTiles, flags.get().revealMap)
       devMenu.setFps(emaFps)
     },
