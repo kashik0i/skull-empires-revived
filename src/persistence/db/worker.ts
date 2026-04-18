@@ -5,6 +5,8 @@
 import sqlite3InitModule, { type Database } from '@sqlite.org/sqlite-wasm'
 import schemaSql from './schema.sql?raw'
 
+const SCHEMA_VERSION = '2'
+
 // ---------------------------------------------------------------------------
 // Message types
 // ---------------------------------------------------------------------------
@@ -44,6 +46,35 @@ function withReqId(reqId: number | undefined): { reqId: number } | Record<never,
 }
 
 // ---------------------------------------------------------------------------
+// Helper: wipe DB if schema version mismatch
+// ---------------------------------------------------------------------------
+
+function wipeIfStale(db: Database): void {
+  try {
+    let currentVersion: string | null = null
+    db.exec({
+      sql: `SELECT value FROM meta WHERE key = 'schema_version'`,
+      rowMode: 'object',
+      callback: (row: unknown) => {
+        const r = row as { value: string }
+        currentVersion = r.value
+      },
+    })
+
+    if (currentVersion !== null && currentVersion !== SCHEMA_VERSION) {
+      console.info(
+        `[persistence] schema upgrade ${currentVersion} → ${SCHEMA_VERSION}; previous runs wiped`
+      )
+      db.exec('DROP TABLE IF EXISTS run_events')
+      db.exec('DROP TABLE IF EXISTS runs')
+      db.exec('DROP TABLE IF EXISTS meta')
+    }
+  } catch (_err) {
+    // First boot or corrupted meta table — nothing to wipe, schema will be created fresh
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Worker init
 // ---------------------------------------------------------------------------
 
@@ -73,6 +104,7 @@ async function init(): Promise<void> {
     db = new sqlite3.oo1.DB(':memory:', 'cw')
   }
 
+  wipeIfStale(db)
   db.exec(schemaSql)
 
   const ready: WorkerResp = { kind: 'ready' }
