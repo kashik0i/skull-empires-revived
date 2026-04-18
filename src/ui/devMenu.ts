@@ -21,12 +21,14 @@ type FlagConfig = {
 
 const FLAG_UI: FlagConfig[] = [
   { key: 'showFps',        label: 'FPS counter',     hint: 'Show frames-per-second overlay' },
-  { key: 'slowMotion',     label: 'Slow motion',     hint: 'Slow enemy turns to 1000ms' },
   { key: 'showHeroPath',   label: 'Show hero path',  hint: 'Draw the hero\u2019s cached BFS path' },
   { key: 'pauseEnemies',   label: 'Pause enemies',   hint: 'Freeze enemy turns' },
   { key: 'invincibleHero', label: 'Invincible hero', hint: 'Hero takes no damage' },
   { key: 'revealMap',      label: 'Reveal map',      hint: 'Disable fog of war' },
 ]
+
+// Slider snaps — covers slow debugging → very fast playtesting.
+const TICK_SPEED_STEPS = [0.25, 0.5, 1, 1.5, 2, 3, 5]
 
 export function mountDevMenu(container: HTMLElement, flags: FlagStore): DevMenu {
   const root = document.createElement('div')
@@ -138,6 +140,49 @@ export function mountDevMenu(container: HTMLElement, flags: FlagStore): DevMenu 
   volumeRow.appendChild(volumeReadout)
   root.appendChild(volumeRow)
 
+  // Tick-speed slider: snaps to named steps (0.25x .. 5x).
+  const speedRow = document.createElement('label')
+  Object.assign(speedRow.style, {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '6px 0 3px 0',
+  } satisfies Partial<CSSStyleDeclaration>)
+  speedRow.title = 'Enemy tick speed (1x = 300ms/turn)'
+
+  const speedLabel = document.createElement('span')
+  speedLabel.textContent = 'Speed'
+  Object.assign(speedLabel.style, { flex: '0 0 auto' } satisfies Partial<CSSStyleDeclaration>)
+
+  const initialSpeedIdx = Math.max(0, TICK_SPEED_STEPS.indexOf(flags.get().tickSpeed))
+  const speedSlider = document.createElement('input')
+  speedSlider.type = 'range'
+  speedSlider.min = '0'
+  speedSlider.max = String(TICK_SPEED_STEPS.length - 1)
+  speedSlider.step = '1'
+  speedSlider.value = String(initialSpeedIdx === -1 ? 2 : initialSpeedIdx)
+  Object.assign(speedSlider.style, { flex: '1 1 auto' } satisfies Partial<CSSStyleDeclaration>)
+
+  const speedReadout = document.createElement('span')
+  Object.assign(speedReadout.style, {
+    flex: '0 0 auto',
+    fontFamily: 'ui-monospace, monospace',
+    minWidth: '40px',
+    textAlign: 'right',
+  } satisfies Partial<CSSStyleDeclaration>)
+  speedReadout.textContent = `${flags.get().tickSpeed}x`
+
+  speedSlider.addEventListener('input', () => {
+    const i = Number(speedSlider.value)
+    const step = TICK_SPEED_STEPS[i]
+    flags.set('tickSpeed', step)
+  })
+
+  speedRow.appendChild(speedLabel)
+  speedRow.appendChild(speedSlider)
+  speedRow.appendChild(speedReadout)
+  root.appendChild(speedRow)
+
   const hint = document.createElement('div')
   hint.textContent = 'Press ` to toggle'
   Object.assign(hint.style, {
@@ -149,13 +194,16 @@ export function mountDevMenu(container: HTMLElement, flags: FlagStore): DevMenu 
 
   container.appendChild(root)
 
-  // Keep checkboxes + slider in sync if flags are set programmatically.
+  // Keep checkboxes + sliders in sync if flags are set programmatically.
   flags.subscribe(next => {
     FLAG_UI.forEach((cfg, i) => { checkboxes[i].checked = next[cfg.key] })
     fpsLine.style.display = next.showFps ? 'block' : 'none'
     const pct = Math.round(next.volume * 100)
     if (volumeSlider.value !== String(pct)) volumeSlider.value = String(pct)
     volumeReadout.textContent = `${pct}`
+    const idx = TICK_SPEED_STEPS.indexOf(next.tickSpeed)
+    if (idx >= 0 && speedSlider.value !== String(idx)) speedSlider.value = String(idx)
+    speedReadout.textContent = `${next.tickSpeed}x`
   })
 
   function show() { root.style.display = 'block' }

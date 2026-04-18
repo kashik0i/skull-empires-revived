@@ -2,23 +2,27 @@ const STORAGE_KEY = 'skull-empires.flags.v1'
 
 export type Flags = {
   showFps: boolean
-  slowMotion: boolean
   showHeroPath: boolean
   pauseEnemies: boolean
   invincibleHero: boolean
   revealMap: boolean
   volume: number
+  /** Tick speed multiplier: 1 = normal (300ms/tick), <1 = slower, >1 = faster. */
+  tickSpeed: number
 }
 
 const DEFAULTS: Flags = {
   showFps: false,
-  slowMotion: false,
   showHeroPath: false,
   pauseEnemies: false,
   invincibleHero: false,
   revealMap: false,
   volume: 0.5,
+  tickSpeed: 1,
 }
+
+const TICK_SPEED_MIN = 0.1
+const TICK_SPEED_MAX = 5
 
 export type FlagStore = {
   get(): Flags
@@ -33,6 +37,13 @@ function clampVolume(v: number): number {
   return v
 }
 
+function clampTickSpeed(v: number): number {
+  if (Number.isNaN(v)) return 1
+  if (v < TICK_SPEED_MIN) return TICK_SPEED_MIN
+  if (v > TICK_SPEED_MAX) return TICK_SPEED_MAX
+  return v
+}
+
 export function createFlags(): FlagStore {
   let flags: Flags = { ...DEFAULTS, ...loadFromStorage() }
   const subs: ((f: Flags) => void)[] = []
@@ -42,6 +53,8 @@ export function createFlags(): FlagStore {
       let nextValue: Flags[typeof key] = value
       if (key === 'volume') {
         nextValue = clampVolume(value as number) as Flags[typeof key]
+      } else if (key === 'tickSpeed') {
+        nextValue = clampTickSpeed(value as number) as Flags[typeof key]
       }
       if (flags[key] === nextValue) return
       flags = { ...flags, [key]: nextValue }
@@ -72,6 +85,8 @@ function loadFromStorage(): Partial<Flags> {
       } else if (typeof defaultValue === 'number' && typeof incoming === 'number') {
         if (key === 'volume') {
           (valid as Record<string, unknown>)[key] = clampVolume(incoming)
+        } else if (key === 'tickSpeed') {
+          (valid as Record<string, unknown>)[key] = clampTickSpeed(incoming)
         } else {
           (valid as Record<string, unknown>)[key] = incoming
         }

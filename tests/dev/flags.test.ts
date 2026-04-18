@@ -24,12 +24,12 @@ describe('flag store', () => {
     const flags = createFlags()
     expect(flags.get()).toEqual({
       showFps: false,
-      slowMotion: false,
       showHeroPath: false,
       pauseEnemies: false,
       invincibleHero: false,
       revealMap: false,
       volume: 0.5,
+      tickSpeed: 1,
     })
   })
 
@@ -53,9 +53,9 @@ describe('flag store', () => {
 
   it('persists changes to localStorage and restores on re-create', () => {
     const a = createFlags()
-    a.set('slowMotion', true)
+    a.set('showHeroPath', true)
     const b = createFlags()
-    expect(b.get().slowMotion).toBe(true)
+    expect(b.get().showHeroPath).toBe(true)
   })
 
   it('unsubscribe stops notifications', () => {
@@ -100,21 +100,30 @@ describe('flag store', () => {
   })
 
   it('fills in defaults when localStorage payload is missing new fields', () => {
-    // Old shape: only the original three booleans.
+    // Old shape: just the original booleans (pre-tickSpeed, pre-volume).
     storage.set('skull-empires.flags.v1', JSON.stringify({
       showFps: true,
-      slowMotion: true,
       showHeroPath: false,
     }))
     const flags = createFlags()
     expect(flags.get()).toEqual({
       showFps: true,
-      slowMotion: true,
       showHeroPath: false,
       pauseEnemies: false,
       invincibleHero: false,
       revealMap: false,
       volume: 0.5,
+      tickSpeed: 1,
     })
+  })
+
+  it('clamps tickSpeed to [0.1, 5]', () => {
+    const flags = createFlags()
+    flags.set('tickSpeed', 0.01)
+    expect(flags.get().tickSpeed).toBe(0.1)
+    flags.set('tickSpeed', 100)
+    expect(flags.get().tickSpeed).toBe(5)
+    flags.set('tickSpeed', 2)
+    expect(flags.get().tickSpeed).toBe(2)
   })
 })

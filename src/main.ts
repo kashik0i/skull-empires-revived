@@ -25,8 +25,7 @@ import type { CameraOffset } from './render/camera'
 
 const TILE_SIZE = 24
 const PARTICLE_CAP = 500
-const FAST_TICK_MS = 300
-const SLOW_TICK_MS = 1000
+const BASE_TICK_MS = 300
 
 function randomSeed(): string {
   const bytes = new Uint8Array(8)
@@ -157,7 +156,7 @@ async function main(): Promise<void> {
       devMenu.setFps(emaFps)
     },
     {
-      enemyTickMs: () => flags.get().slowMotion ? SLOW_TICK_MS : FAST_TICK_MS,
+      enemyTickMs: () => BASE_TICK_MS / flags.get().tickSpeed,
       pauseEnemies: () => flags.get().pauseEnemies,
       heroInvincible: () => flags.get().invincibleHero,
       onAction(action, state) {
