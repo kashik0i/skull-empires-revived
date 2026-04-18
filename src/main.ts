@@ -27,6 +27,8 @@ import { loadAtlas } from './render/sprites'
 import { computeVisible } from './render/fov'
 import { mountMinimap } from './ui/minimap'
 import { mountDialog } from './ui/dialog'
+import { mountInventory } from './ui/inventory'
+import { mountItemReward } from './ui/itemReward'
 
 const TILE_SIZE = 24
 const PARTICLE_CAP = 500
@@ -138,6 +140,8 @@ async function main(): Promise<void> {
     loop.submit({ type: 'PickCardReward', cardId })
   })
   const dialog = mountDialog(hudContainer, (a) => loop.submit(a))
+  const inventory = mountInventory(hudContainer, (a) => loop.submit(a))
+  const itemReward = mountItemReward(hudContainer, (a) => loop.submit(a))
   const devMenu = mountDevMenu(hudContainer, flags)
   devMenu.setRunId(runId)
   attachDevMenuHotkey(devMenu)
@@ -195,6 +199,8 @@ async function main(): Promise<void> {
       cardReward.update(state)
       cardHand.update(state)
       dialog.update(state)
+      inventory.update(state)
+      itemReward.update(state)
       minimap.update(state, seenTiles, flags.get().revealMap)
       devMenu.setFps(emaFps)
     },
