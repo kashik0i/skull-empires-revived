@@ -15,7 +15,7 @@ describe('initial state', () => {
     const w = createInitialWorld('seed-1')
     const enemies = Object.values(w.actors).filter(a => a.kind === 'enemy')
     expect(enemies.length).toBeGreaterThanOrEqual(2)
-    const floor1Archetypes = new Set(['bone-knight', 'tiny-zombie'])
+    const floor1Archetypes = new Set(['bone-knight', 'tiny-zombie', 'chort'])
     for (const e of enemies) {
       expect(w.floor.tiles[e.pos.y * w.floor.width + e.pos.x]).toBe(Tile.Floor)
       expect(floor1Archetypes.has(e.archetype)).toBe(true)

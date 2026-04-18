@@ -33,6 +33,10 @@ const FRAMES: Record<string, SpriteFrame> = {
   masked_orc_idle:   { x: 368, y: 172, w: 16, h: 20, frames: 4 },
   orc_warrior_idle:  { x: 368, y: 204, w: 16, h: 20, frames: 4 },
   orc_shaman_idle:   { x: 368, y: 236, w: 16, h: 20, frames: 4 },
+  wogol_idle:        { x: 368, y: 300, w: 16, h: 20, frames: 4 },
+
+  // 16×24 chort — 4 idle frames, taller than orc tier
+  chort_idle:        { x: 368, y: 328, w: 16, h: 24, frames: 4 },
 
   // Big demon boss — 32×36, 4 idle frames (2 tiles wide)
   big_demon_idle:    { x: 16,  y: 364, w: 32, h: 36, frames: 4 },

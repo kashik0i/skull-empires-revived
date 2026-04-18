@@ -119,5 +119,50 @@
       "head":   { "type": "circle", "y": -0.4, "r": 0.22, "color": "boneWhite" },
       "eyes":   { "type": "eyeDots", "y": -0.4, "spacing": 0.1, "r": 0.03, "color": "deepPurpleDark" }
     }
+  },
+  "chort": {
+    "kind": "enemy",
+    "name": "Chort",
+    "hp": 6,
+    "atk": 2,
+    "def": 0,
+    "color": "bloodCrimson",
+    "behavior": "chase",
+    "sprite": "chort_idle",
+    "shape": {
+      "body":   { "type": "rect", "w": 0.55, "h": 0.7, "color": "bloodCrimson", "corner": 0.1 },
+      "head":   { "type": "circle", "y": -0.35, "r": 0.2, "color": "bloodCrimson" },
+      "eyes":   { "type": "eyeDots", "y": -0.35, "spacing": 0.1, "r": 0.04, "color": "boneWhite" }
+    }
+  },
+  "wogol": {
+    "kind": "enemy",
+    "name": "Wogol",
+    "hp": 4,
+    "atk": 3,
+    "def": 0,
+    "color": "deepPurple",
+    "behavior": "chase",
+    "sprite": "wogol_idle",
+    "shape": {
+      "body":   { "type": "rect", "w": 0.4, "h": 0.65, "color": "deepPurple", "corner": 0.1 },
+      "head":   { "type": "circle", "y": -0.35, "r": 0.18, "color": "deepPurpleLite" },
+      "eyes":   { "type": "eyeDots", "y": -0.35, "spacing": 0.08, "r": 0.03, "color": "silkFlameAmber" }
+    }
+  },
+  "ice-zombie": {
+    "kind": "enemy",
+    "name": "Ice Zombie",
+    "hp": 14,
+    "atk": 2,
+    "def": 1,
+    "color": "deepPurpleLite",
+    "behavior": "chase",
+    "sprite": "ice_zombie_idle",
+    "shape": {
+      "body":   { "type": "rect", "w": 0.55, "h": 0.75, "color": "deepPurpleLite", "corner": 0.1 },
+      "head":   { "type": "circle", "y": -0.4, "r": 0.22, "color": "boneWhite" },
+      "eyes":   { "type": "eyeDots", "y": -0.4, "spacing": 0.1, "r": 0.04, "color": "deepPurple" }
+    }
   }
 }

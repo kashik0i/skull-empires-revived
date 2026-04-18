@@ -29,10 +29,10 @@ export function shuffleWithRng<T>(arr: T[], rng: RngState): { result: T[]; rng: 
  * (truncating if the floor has fewer spawns than the list).
  */
 const FLOOR_COMPOSITIONS: Record<number, string[]> = {
-  1: ['bone-knight', 'tiny-zombie'],
-  2: ['bone-knight', 'tiny-zombie', 'imp'],
-  3: ['bone-knight', 'imp', 'orc-warrior'],
-  4: ['masked-orc', 'orc-warrior', 'bone-knight', 'imp'],
+  1: ['bone-knight', 'tiny-zombie', 'chort'],
+  2: ['bone-knight', 'tiny-zombie', 'imp', 'wogol'],
+  3: ['bone-knight', 'imp', 'orc-warrior', 'chort', 'wogol'],
+  4: ['masked-orc', 'orc-warrior', 'bone-knight', 'imp', 'ice-zombie'],
 }
 
 export function compositionForDepth(depth: number): string[] {
