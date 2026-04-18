@@ -53,7 +53,9 @@ export function merchantTrade(state: World, action: MerchantTradeAction): World 
       ...state.run,
       cards: {
         ...state.run.cards,
-        deck: [...state.run.cards.deck, action.cardId],
+        // Drop straight into the hand so the bought card is playable right now —
+        // routing it through the deck means it might not surface until many turns later.
+        hand: [...state.run.cards.hand, action.cardId],
       },
     },
   }

@@ -33,14 +33,14 @@ describe('merchant interaction', () => {
     expect(next.pendingDialog!.actions.length).toBe(3)
   })
 
-  it('MerchantTrade adds card to deck and removes merchant', () => {
+  it('MerchantTrade adds card to hand and removes merchant', () => {
     const state = withMerchant('m-2')
-    const before = state.run.cards.deck.length
+    const before = state.run.cards.hand.length
     const next = dispatch(state, { type: 'MerchantTrade', cardId: 'heal', merchantId: 'merchant-d2' })
     expect(next.actors['merchant-d2']).toBeUndefined()
     expect(next.turnOrder.includes('merchant-d2')).toBe(false)
-    expect(next.run.cards.deck.length).toBe(before + 1)
-    expect(next.run.cards.deck[next.run.cards.deck.length - 1]).toBe('heal')
+    expect(next.run.cards.hand.length).toBe(before + 1)
+    expect(next.run.cards.hand).toContain('heal')
   })
 
   it('interact click on NPC sets interact intent', async () => {

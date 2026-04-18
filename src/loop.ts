@@ -104,7 +104,9 @@ export function createLoop(
     if (!running) return
     const dtMs = lastFrameMs === 0 ? 16 : nowMs - lastFrameMs
     lastFrameMs = nowMs
-    if (state.phase === 'exploring' && nowMs - lastTickMs >= getTickMs()) {
+    // Freeze enemy/hero ticks while a dialog is open so the player can read
+     // the modal without taking damage from adjacent enemies.
+    if (state.phase === 'exploring' && state.pendingDialog === null && nowMs - lastTickMs >= getTickMs()) {
       lastTickMs = nowMs
       runCurrentActor()
       apply({ type: 'TurnAdvance' })
