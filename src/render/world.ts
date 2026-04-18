@@ -1,5 +1,6 @@
 import { Tile, type World } from '../core/types'
 import { getArchetype } from '../content/loader'
+import { getItemDef } from '../content/itemLoader'
 import { palette } from '../content/palette'
 import { drawShape } from './shape'
 import { drawSprite, drawTileSprite, itemSpriteName, isAtlasReady } from './sprites'
@@ -155,7 +156,7 @@ export function renderWorld(
     ctx.globalAlpha = 1
   }
 
-  // Dropped items — only shown in currently-visible tiles (memory doesn't persist items).
+  // Dropped items — legacy flask system, kept for back-compat with old saves.
   if (atlasReady) {
     const bob = Math.sin(performance.now() / 400) * tileSize * 0.08
     for (const item of state.droppedItems) {
@@ -165,6 +166,18 @@ export function renderWorld(
       const cx = item.pos.x * tileSize + tileSize / 2
       const cy = item.pos.y * tileSize + tileSize / 2 + bob
       drawSprite(ctx, sprite, cx, cy, tileSize)
+    }
+  }
+
+  // Ground items — new Phase 1E system. Render with the item's own sprite name.
+  if (atlasReady) {
+    const bob = Math.sin(performance.now() / 400) * tileSize * 0.08
+    for (const ground of state.groundItems) {
+      if (!posVisible(ground.pos.x, ground.pos.y)) continue
+      const def = getItemDef(ground.itemId)
+      const cx = ground.pos.x * tileSize + tileSize / 2
+      const cy = ground.pos.y * tileSize + tileSize / 2 + bob
+      drawSprite(ctx, def.sprite, cx, cy, tileSize)
     }
   }
 

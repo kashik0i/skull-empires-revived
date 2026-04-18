@@ -1,9 +1,6 @@
-import type { World, Action, Actor, Pos, DroppedItem, DroppedItemInstance, LegacyItemKind } from '../types'
-import { nextFloat, nextU32 } from '../rng'
+import type { World, Action, Actor, Pos, DroppedItemInstance } from '../types'
+import { nextU32 } from '../rng'
 import { itemPoolForDepth } from '../../content/itemLoader'
-
-const DROP_CHANCE = 0.4
-const DROP_POOL: readonly LegacyItemKind[] = ['flask-red', 'flask-yellow', 'flask-blue']
 
 /** Sum of buff-atk amounts on an actor's active status effects. */
 function buffAtkBonus(actor: Actor): number {
@@ -35,28 +32,9 @@ export function attackActor(state: World, action: Extract<Action, { type: 'Attac
   const hp = target.hp - dmg
   const alive = hp > 0
 
-  // On kill: hero only, non-boss enemies drop loot. Boss drops nothing
-  // (kill-all on boss floor is the win condition; items would be unused).
-  let rng = state.rng
-  let droppedItems = state.droppedItems
-  if (!alive && target.kind === 'enemy' && attacker.kind === 'hero' && !isBossArchetype(target.archetype)) {
-    const roll = nextFloat(rng)
-    rng = roll.state
-    if (roll.value < DROP_CHANCE) {
-      const pick = nextFloat(rng)
-      rng = pick.state
-      const kind = DROP_POOL[Math.floor(pick.value * DROP_POOL.length)]
-      const item: DroppedItem = {
-        id: `item-${state.tick}-${target.id}`,
-        kind,
-        pos: target.pos,
-      }
-      droppedItems = [...droppedItems, item]
-    }
-  }
-
-  // New item system: 25% drop on any hero kill of an enemy (including bosses).
-  let nextRng = rng
+  // 25% drop on hero kill of any enemy (bosses included). Picks from the
+  // depth-tier pool. RNG threaded through so replay is deterministic.
+  let nextRng = state.rng
   let groundItems = state.groundItems
   if (!alive && attacker.kind === 'hero' && target.kind === 'enemy') {
     const r1 = nextU32(nextRng); nextRng = r1.state
@@ -81,13 +59,8 @@ export function attackActor(state: World, action: Extract<Action, { type: 'Attac
       [target.id]: { ...target, hp, alive },
     },
     rng: nextRng,
-    droppedItems,
     groundItems,
   }
-}
-
-function isBossArchetype(archetype: string): boolean {
-  return archetype === 'skull-emperor'
 }
 
 function adjacent(a: Pos, b: Pos): boolean {
