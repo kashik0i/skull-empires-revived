@@ -82,11 +82,11 @@ export function renderWorld(
         }
       } else if (t === Tile.Wall) {
         if (atlasReady) {
-          // Top of a vertical wall section (tile above is floor or out-of-bounds at
-          // the top edge) shows the wall's top face; everything below it is body.
-          const tileAbove = y > 0 ? floor.tiles[(y - 1) * floor.width + x] : Tile.Floor
-          const wallSprite = tileAbove === Tile.Wall ? 'wall_mid' : 'wall_top'
-          drawTileSprite(ctx, wallSprite, x, y, tileSize)
+          // Always use the wall body sprite — `wall_top_mid` in 0x72 is designed
+          // to overhang from the row above as a 3D cap, so it renders mostly
+          // transparent in its own tile box and looks like a thin strip. The
+          // body sprite gives a clean flat top-down brick wall.
+          drawTileSprite(ctx, 'wall_mid', x, y, tileSize)
         } else {
           ctx.fillStyle = palette.deepPurple
           ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize)
