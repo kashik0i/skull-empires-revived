@@ -23,6 +23,8 @@ function emptyWorld(w: number, h: number) {
     rng: createRng('x'),
     revealed: false,
     droppedItems: [],
+    loreScrolls: [],
+    pendingDialog: null,
     run: {
       depth: 1,
       cards: { deck: [], hand: [], discard: [] },

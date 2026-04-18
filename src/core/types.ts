@@ -7,6 +7,7 @@ export const Tile = {
   Floor: 1,
   Wall: 2,
   Stairs: 3,
+  Shrine: 4,
 } as const
 export type TileKind = (typeof Tile)[keyof typeof Tile]
 
@@ -27,7 +28,7 @@ export type DroppedItem = {
 
 export type Actor = {
   id: ActorId
-  kind: 'hero' | 'enemy'
+  kind: 'hero' | 'enemy' | 'npc'
   archetype: string
   pos: Pos
   hp: number
@@ -52,11 +53,25 @@ export type LogEntry = { tick: number; text: string }
 export type HeroIntent =
   | { kind: 'move-to'; goal: Pos }
   | { kind: 'attack'; targetId: ActorId }
+  | { kind: 'interact'; targetId: ActorId }
 
 export type RunCards = {
   deck: string[]
   hand: string[]
   discard: string[]
+}
+
+export type LoreScroll = { id: string; pos: Pos; fragmentIndex: number }
+
+export type DialogAction =
+  | { type: 'ResolveShrine'; choice: 'blood' | 'breath'; pos: Pos }
+  | { type: 'MerchantTrade'; cardId: string; merchantId: ActorId }
+  | { type: 'ClearDialog' }
+
+export type PendingDialog = {
+  title: string
+  body: string
+  actions: Array<{ label: string; resolve: DialogAction | null }>
 }
 
 export type World = {
@@ -74,6 +89,8 @@ export type World = {
   rng: RngState
   revealed: boolean
   droppedItems: DroppedItem[]
+  loreScrolls: LoreScroll[]
+  pendingDialog: PendingDialog | null
   run: {
     depth: number
     cards: RunCards
@@ -95,3 +112,7 @@ export type Action =
   | { type: 'PlayCard'; cardId: string; targetId?: ActorId }
   | { type: 'OfferCardReward'; choices: string[] }
   | { type: 'PickCardReward'; cardId: string }
+  | { type: 'OpenMerchantDialog'; merchantId: ActorId }
+  | { type: 'MerchantTrade'; cardId: string; merchantId: ActorId }
+  | { type: 'ResolveShrine'; choice: 'blood' | 'breath'; pos: Pos }
+  | { type: 'ClearDialog' }
