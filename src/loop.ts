@@ -68,6 +68,7 @@ export function createLoop(
   function maybeOfferReward(): void {
     if (state.phase !== 'exploring') return
     if (state.run.pendingReward !== null) return
+    if (state.run.rewardedThisFloor) return
     if (state.run.depth >= 5) return
     const anyEnemyAlive = Object.values(state.actors).some(a => a.kind === 'enemy' && a.alive)
     if (anyEnemyAlive) return

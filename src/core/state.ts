@@ -139,6 +139,7 @@ export function createInitialWorld(seed: string): World {
         discard: [],
       },
       pendingReward: null,
+      rewardedThisFloor: false,
     },
   }
 }

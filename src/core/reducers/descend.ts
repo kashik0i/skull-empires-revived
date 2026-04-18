@@ -58,6 +58,7 @@ export function descend(world: World): World {
     run: {
       ...world.run,
       depth: newDepth,
+      rewardedThisFloor: false,
     },
   }
 }

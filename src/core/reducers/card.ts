@@ -103,6 +103,7 @@ export function offerCardReward(state: World, action: OfferCardRewardAction): Wo
     run: {
       ...state.run,
       pendingReward: { choices: action.choices },
+      rewardedThisFloor: true,
     },
   }
 }

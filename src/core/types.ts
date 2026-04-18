@@ -69,6 +69,8 @@ export type World = {
     depth: number
     cards: RunCards
     pendingReward: null | { choices: string[] }
+    /** Set after a card reward has been offered on this floor; reset on Descend. */
+    rewardedThisFloor: boolean
   }
 }
 

@@ -26,6 +26,7 @@ function emptyWorld(w: number, h: number) {
       depth: 1,
       cards: { deck: [], hand: [], discard: [] },
       pendingReward: null,
+      rewardedThisFloor: false,
     },
   }
 }
