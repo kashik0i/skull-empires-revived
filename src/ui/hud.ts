@@ -86,7 +86,7 @@ export function mountHud(container: HTMLElement): Hud {
   function update(state: World): void {
     const hero = state.actors[state.heroId]
     if (hero) {
-      hpLabel.textContent = `HP ${Math.max(0, hero.hp)} / ${hero.maxHp}`
+      hpLabel.textContent = `HP ${Math.max(0, hero.hp)} / ${hero.maxHp}  ⚔ ${hero.atk}  🛡 ${hero.def}`
       const ratio = Math.max(0, Math.min(1, hero.hp / hero.maxHp))
       hpBarInner.style.width = `${(ratio * 100).toFixed(0)}%`
     }

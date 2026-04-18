@@ -152,6 +152,7 @@ export function createInitialWorld(seed: string): World {
     log: [],
     rng,
     revealed: false,
+    droppedItems: [],
     run: {
       depth: 1,
       cards: {

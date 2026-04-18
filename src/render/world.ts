@@ -2,7 +2,7 @@ import { Tile, type World } from '../core/types'
 import { getArchetype } from '../content/loader'
 import { palette } from '../content/palette'
 import { drawShape } from './shape'
-import { drawSprite, drawTileSprite, isAtlasReady } from './sprites'
+import { drawSprite, drawTileSprite, itemSpriteName, isAtlasReady } from './sprites'
 import type { DisplayState } from './display'
 
 export type RenderOptions = {
@@ -80,6 +80,18 @@ export function renderWorld(
       ctx.fill()
     }
     ctx.globalAlpha = 1
+  }
+
+  // Dropped items — drawn under actors with a soft bob.
+  if (atlasReady) {
+    const bob = Math.sin(performance.now() / 400) * tileSize * 0.08
+    for (const item of state.droppedItems) {
+      const sprite = itemSpriteName(item.kind)
+      if (!sprite) continue
+      const cx = item.pos.x * tileSize + tileSize / 2
+      const cy = item.pos.y * tileSize + tileSize / 2 + bob
+      drawSprite(ctx, sprite, cx, cy, tileSize)
+    }
   }
 
   const targetId = state.heroIntent?.kind === 'attack' ? state.heroIntent.targetId : null

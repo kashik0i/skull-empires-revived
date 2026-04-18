@@ -17,6 +17,14 @@ export type StatusEffect =
   | { kind: 'buff-def'; amount: number; remainingTicks: number }
   | { kind: 'debuff-def'; amount: number; remainingTicks: number }
 
+export type ItemKind = 'flask-red' | 'flask-yellow' | 'flask-blue'
+
+export type DroppedItem = {
+  id: string
+  kind: ItemKind
+  pos: Pos
+}
+
 export type Actor = {
   id: ActorId
   kind: 'hero' | 'enemy'
@@ -65,6 +73,7 @@ export type World = {
   log: LogEntry[]
   rng: RngState
   revealed: boolean
+  droppedItems: DroppedItem[]
   run: {
     depth: number
     cards: RunCards

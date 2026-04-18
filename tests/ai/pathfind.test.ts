@@ -22,6 +22,7 @@ function emptyWorld(w: number, h: number) {
     log: [],
     rng: createRng('x'),
     revealed: false,
+    droppedItems: [],
     run: {
       depth: 1,
       cards: { deck: [], hand: [], discard: [] },

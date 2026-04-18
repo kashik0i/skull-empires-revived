@@ -55,6 +55,7 @@ export function descend(world: World): World {
     turnOrder,
     turnIndex: 0,
     rng: rng2,
+    droppedItems: [],
     run: {
       ...world.run,
       depth: newDepth,

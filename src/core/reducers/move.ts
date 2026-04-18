@@ -1,4 +1,4 @@
-import { Tile, type World, type Action, type ActorId, type Pos } from '../types'
+import { Tile, type World, type Action, type Actor, type ActorId, type Pos, type DroppedItem } from '../types'
 
 export function moveActor(state: World, action: Extract<Action, { type: 'MoveActor' }>): World {
   const actor = state.actors[action.actorId]
@@ -6,12 +6,38 @@ export function moveActor(state: World, action: Extract<Action, { type: 'MoveAct
   if (!isAdjacent(actor.pos, action.to)) return state
   if (!isWalkable(state, action.to)) return state
   if (isOccupied(state, action.to, action.actorId)) return state
+
+  const movedActor = { ...actor, pos: action.to }
+  let droppedItems = state.droppedItems
+  let finalActor: Actor = movedActor
+
+  // Only the hero can pick up items (simplifies the rules + prevents enemies eating potions).
+  if (actor.id === state.heroId) {
+    const itemHere = droppedItems.find(it => it.pos.x === action.to.x && it.pos.y === action.to.y)
+    if (itemHere) {
+      finalActor = applyItemToHero(movedActor, itemHere)
+      droppedItems = droppedItems.filter(it => it.id !== itemHere.id)
+    }
+  }
+
   return {
     ...state,
+    droppedItems,
     actors: {
       ...state.actors,
-      [action.actorId]: { ...actor, pos: action.to },
+      [action.actorId]: finalActor,
     },
+  }
+}
+
+function applyItemToHero(hero: Actor, item: DroppedItem): Actor {
+  switch (item.kind) {
+    case 'flask-red':
+      return { ...hero, hp: Math.min(hero.maxHp, hero.hp + 5) }
+    case 'flask-yellow':
+      return { ...hero, atk: hero.atk + 1 }
+    case 'flask-blue':
+      return { ...hero, def: hero.def + 1 }
   }
 }
 
