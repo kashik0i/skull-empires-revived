@@ -1,5 +1,6 @@
-import type { World, Action, Actor, Pos, DroppedItem, LegacyItemKind } from '../types'
-import { nextFloat } from '../rng'
+import type { World, Action, Actor, Pos, DroppedItem, DroppedItemInstance, LegacyItemKind } from '../types'
+import { nextFloat, nextU32 } from '../rng'
+import { itemPoolForDepth } from '../../content/itemLoader'
 
 const DROP_CHANCE = 0.4
 const DROP_POOL: readonly LegacyItemKind[] = ['flask-red', 'flask-yellow', 'flask-blue']
@@ -54,14 +55,34 @@ export function attackActor(state: World, action: Extract<Action, { type: 'Attac
     }
   }
 
+  // New item system: 25% drop on any hero kill of an enemy (including bosses).
+  let nextRng = rng
+  let groundItems = state.groundItems
+  if (!alive && attacker.kind === 'hero' && target.kind === 'enemy') {
+    const r1 = nextU32(nextRng); nextRng = r1.state
+    if (r1.value % 100 < 25) {
+      const pool = itemPoolForDepth(state.run.depth)
+      const r2 = nextU32(nextRng); nextRng = r2.state
+      const itemId = pool[r2.value % pool.length]
+      const r3 = nextU32(nextRng); nextRng = r3.state
+      const drop: DroppedItemInstance = {
+        instanceId: `drop-${state.tick}-${r3.value}`,
+        itemId,
+        pos: target.pos,
+      }
+      groundItems = [...groundItems, drop]
+    }
+  }
+
   return {
     ...state,
     actors: {
       ...state.actors,
       [target.id]: { ...target, hp, alive },
     },
-    rng,
+    rng: nextRng,
     droppedItems,
+    groundItems,
   }
 }
 
