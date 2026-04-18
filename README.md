@@ -62,3 +62,46 @@ Spec: `docs/plans/2026-04-17-phase-1c-design.md`. Plan: `docs/plans/2026-04-17-p
 - **Status effects** — `buff-atk` / `buff-def` / `debuff-def` modify attack/defense math; tick down on each `TurnAdvance` and purge at zero.
 - **Persistence** — SQLite-WASM in a Web Worker, backed by OPFS. Auto-resumes an in-progress run on boot (URL param overrides DB). Requires cross-origin isolation headers (set in `vite.config.ts`).
 - **Dev menu** (backtick) — volume slider, `slowMotion`, `pauseEnemies`, `invincibleHero`, `showFps`, `showHeroPath`. `revealMap` exists for future fog-of-war work.
+
+## Phase 1D — Narrative & content
+
+Spec: `docs/plans/2026-04-18-phase-1d-design.md`.
+Plan: `docs/plans/2026-04-18-phase-1d-plan.md`.
+
+- **NPC — Grim the Wanderer.** Merchant appears on floors 2 and 4 near
+  hero spawn. Click to approach; adjacency opens a 3-card trade modal.
+  Hero swaps positions with NPCs when walking onto their tile (no hard
+  blocking), so a merchant never strands the hero.
+- **Lore scrolls.** One per non-boss floor, placed on a random floor tile.
+  Step onto it to read a fragment; no codex — read once, gone.
+- **Shrines.** ~25% of non-boss floors have a shrine tile. Stand on it
+  to choose Blood (+2 maxHp) or Breath (+1 atk). The tile converts back
+  to floor after resolving.
+- **3 new cards:** Greater Heal (heal 12), Fortify (+2 DEF / 6 ticks),
+  Vigor (+3 ATK / 3 ticks).
+
+Dialog UX: any NPC / scroll / shrine interaction opens a centered modal.
+Card hand and other UI remain visible but non-interactive while the
+modal is up.
+
+Control note: player intent (click-to-move / click-to-attack / click-NPC)
+takes precedence over auto-defend, so you can retreat from or walk past
+adjacent enemies when you want to.
+
+### Phase 1D smoke checklist
+
+1. Fresh run — floor 1 has exactly one lore scroll placed on a floor tile;
+   walk onto it → lore modal, dismiss → continue.
+2. Kill all enemies on floor 1 → card reward modal (unchanged).
+3. Descend to floor 2 → merchant appears near hero spawn. Click merchant
+   from any distance → hero walks toward merchant (passing through other
+   NPCs / swapping with adjacent NPCs). Adjacent → modal with 3 cards.
+   Pick one → card added to deck; merchant vanishes.
+4. Some non-boss floors have a shrine; walk onto it → modal → pick Blood
+   or Breath → HUD stat updates visibly. Tile becomes floor.
+5. Click to retreat while an enemy is adjacent → hero walks away instead
+   of auto-attacking.
+6. Refresh mid-run → auto-resume preserves scrolls / shrines / merchant
+   state and any completed stat changes.
+7. Boss floor (5) — no merchant, no scroll, no shrine. Win condition
+   unchanged.
