@@ -81,8 +81,10 @@ export function renderWorld(
         }
       } else if (t === Tile.Wall) {
         if (atlasReady) {
-          const tileAbove = y > 0 ? floor.tiles[(y - 1) * floor.width + x] : Tile.Wall
-          const wallSprite = tileAbove === Tile.Wall ? 'wall_top' : 'wall_side'
+          // Top of a vertical wall section (tile above is floor or out-of-bounds at
+          // the top edge) shows the wall's top face; everything below it is body.
+          const tileAbove = y > 0 ? floor.tiles[(y - 1) * floor.width + x] : Tile.Floor
+          const wallSprite = tileAbove === Tile.Wall ? 'wall_mid' : 'wall_top'
           drawTileSprite(ctx, wallSprite, x, y, tileSize)
         } else {
           ctx.fillStyle = palette.deepPurple
