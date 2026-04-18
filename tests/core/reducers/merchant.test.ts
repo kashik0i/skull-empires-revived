@@ -26,21 +26,36 @@ function withMerchant(seed: string): World {
 }
 
 describe('merchant interaction', () => {
-  it('OpenMerchantDialog sets pendingDialog with 3 card choices', () => {
+  it('OpenMerchantDialog offers 3 items', () => {
     const state = withMerchant('m-1')
     const next = dispatch(state, { type: 'OpenMerchantDialog', merchantId: 'merchant-d2' })
     expect(next.pendingDialog).not.toBeNull()
     expect(next.pendingDialog!.actions.length).toBe(3)
+    for (const act of next.pendingDialog!.actions) {
+      expect(act.resolve?.type).toBe('MerchantBuyItem')
+    }
   })
 
-  it('MerchantTrade adds card to hand and removes merchant', () => {
+  it('MerchantBuyItem adds item to inventory and removes merchant', () => {
     const state = withMerchant('m-2')
-    const before = state.run.cards.hand.length
-    const next = dispatch(state, { type: 'MerchantTrade', cardId: 'heal', merchantId: 'merchant-d2' })
+    const next = dispatch(state, { type: 'MerchantBuyItem', itemId: 'heal-small', merchantId: 'merchant-d2' })
     expect(next.actors['merchant-d2']).toBeUndefined()
     expect(next.turnOrder.includes('merchant-d2')).toBe(false)
-    expect(next.run.cards.hand.length).toBe(before + 1)
-    expect(next.run.cards.hand).toContain('heal')
+    expect(next.inventory.length).toBe(1)
+    expect(next.inventory[0].id).toBe('heal-small')
+  })
+
+  it('MerchantBuyItem on full inventory closes dialog without adding', () => {
+    const base = withMerchant('m-3')
+    // Fill inventory to 6
+    const fullInv = Array.from({ length: 6 }, (_, i) => ({
+      id: 'heal-small', instanceId: `p${i}`, name: 'x', sprite: 'flask_red',
+      body: { kind: 'potion' as const, effect: { type: 'heal' as const, amount: 5 } },
+    }))
+    const state = { ...base, inventory: fullInv, pendingDialog: { title: 't', body: 'b', actions: [] } }
+    const next = dispatch(state, { type: 'MerchantBuyItem', itemId: 'heal-small', merchantId: 'merchant-d2' })
+    expect(next.inventory.length).toBe(6)
+    expect(next.pendingDialog).toBeNull()
   })
 
   it('interact click on NPC sets interact intent', async () => {
@@ -49,15 +64,6 @@ describe('merchant interaction', () => {
     const npcPos = state.actors['merchant-d2'].pos
     const action = intentForClick(state, npcPos)
     expect(action).toEqual({ type: 'SetHeroIntent', intent: { kind: 'interact', targetId: 'merchant-d2' } })
-  })
-
-  it('MerchantTrade clears any pending dialog', () => {
-    const state: World = {
-      ...withMerchant('m-4'),
-      pendingDialog: { title: 't', body: 'b', actions: [] },
-    }
-    const next = dispatch(state, { type: 'MerchantTrade', cardId: 'heal', merchantId: 'merchant-d2' })
-    expect(next.pendingDialog).toBeNull()
   })
 
   it('hero walking onto merchant tile swaps positions', () => {

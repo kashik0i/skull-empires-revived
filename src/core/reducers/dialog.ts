@@ -1,10 +1,10 @@
 import type { World, Action } from '../types'
 import { Tile } from '../types'
-import { listCardIds, getCard } from '../../content/cardLoader'
+import { getItemDef, instantiateItem, itemPoolForDepth } from '../../content/itemLoader'
+import { shuffleWithRng } from '../state'
 import { nextU32 } from '../rng'
 
 type OpenMerchantAction = Extract<Action, { type: 'OpenMerchantDialog' }>
-type MerchantTradeAction = Extract<Action, { type: 'MerchantTrade' }>
 type ResolveShrineAction = Extract<Action, { type: 'ResolveShrine' }>
 
 export function clearDialog(state: World): World {
@@ -16,48 +16,39 @@ export function openMerchantDialog(state: World, action: OpenMerchantAction): Wo
   const merchant = state.actors[action.merchantId]
   if (!merchant || merchant.kind !== 'npc') return state
 
-  // Fisher-Yates shuffle of card pool using world rng; take first 3.
-  const pool = listCardIds().slice()
-  let rng = state.rng
-  for (let i = pool.length - 1; i > 0; i--) {
-    const r = nextU32(rng)
-    rng = r.state
-    const j = r.value % (i + 1)
-    ;[pool[i], pool[j]] = [pool[j], pool[i]]
-  }
-  const choices = pool.slice(0, 3)
+  const pool = itemPoolForDepth(state.run.depth).slice()
+  const { result: shuffled, rng } = shuffleWithRng(pool, state.rng)
+  const choices = shuffled.slice(0, 3)
 
   const dialog = {
     title: 'Grim the Wanderer',
     body: 'He sets his wares down and nods.',
-    actions: choices.map(cardId => ({
-      label: getCard(cardId).name,
-      resolve: { type: 'MerchantTrade' as const, cardId, merchantId: merchant.id },
+    actions: choices.map(itemId => ({
+      label: getItemDef(itemId).name,
+      resolve: { type: 'MerchantBuyItem' as const, itemId, merchantId: merchant.id },
     })),
   }
-
   return { ...state, rng, pendingDialog: dialog }
 }
 
-export function merchantTrade(state: World, action: MerchantTradeAction): World {
+export function merchantBuyItem(state: World, action: Extract<Action, { type: 'MerchantBuyItem' }>): World {
   const merchant = state.actors[action.merchantId]
   if (!merchant || merchant.kind !== 'npc') return state
+  if (state.inventory.length >= 6) {
+    // Inventory full — close dialog without buying.
+    return { ...state, pendingDialog: null }
+  }
+  const r = nextU32(state.rng)
+  const item = instantiateItem(action.itemId, `bought-${state.tick}-${r.value}`)
   const actors = { ...state.actors }
   delete actors[action.merchantId]
   return {
     ...state,
+    rng: r.state,
     actors,
     turnOrder: state.turnOrder.filter(id => id !== action.merchantId),
     pendingDialog: null,
-    run: {
-      ...state.run,
-      cards: {
-        ...state.run.cards,
-        // Drop straight into the hand so the bought card is playable right now —
-        // routing it through the deck means it might not surface until many turns later.
-        hand: [...state.run.cards.hand, action.cardId],
-      },
-    },
+    inventory: [...state.inventory, item],
   }
 }
 
