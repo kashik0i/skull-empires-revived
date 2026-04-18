@@ -1,8 +1,11 @@
+import type { World } from '../core/types'
+
 export type MusicHandle = {
   start(): void
   stop(): void
   setVolume(v: number): void
   setMoodForDepth(depth: number): void
+  setWorldRef(get: () => World): void
 }
 
 type Mood = { scale: readonly number[]; bpm: number; root: number; bossHarmony: boolean }
@@ -41,6 +44,37 @@ export function createMusic(seed: string): MusicHandle {
   let nextStepAt = 0
   let running = false
   let rngState = hash(seed)
+  let getWorld: (() => World) | null = null
+
+  function combatLevel(): 'explore' | 'combat' {
+    if (!getWorld) return 'explore'
+    const w = getWorld()
+    const hero = w.actors[w.heroId]
+    if (!hero || !hero.alive) return 'explore'
+    let nearest = Infinity
+    for (const a of Object.values(w.actors)) {
+      if (a.id === w.heroId || !a.alive || a.kind !== 'enemy') continue
+      const d = Math.max(Math.abs(a.pos.x - hero.pos.x), Math.abs(a.pos.y - hero.pos.y))
+      if (d < nearest) nearest = d
+    }
+    return nearest <= 3 ? 'combat' : 'explore'
+  }
+
+  function applyMix(level: 'explore' | 'combat'): void {
+    const t = ctx.currentTime
+    const TC = 0.5  // time constant — ~1s smoothing
+    if (level === 'combat') {
+      bassGain.gain.setTargetAtTime(0.6, t, TC)
+      percGain.gain.setTargetAtTime(0.7, t, TC)
+    } else {
+      bassGain.gain.setTargetAtTime(0.4, t, TC)
+      percGain.gain.setTargetAtTime(0.3, t, TC)
+    }
+  }
+
+  function effectiveBpm(): number {
+    return combatLevel() === 'combat' ? mood.bpm * 1.25 : mood.bpm
+  }
 
   function rand(): number {
     rngState = (Math.imul(rngState, 1664525) + 1013904223) >>> 0
@@ -98,7 +132,9 @@ export function createMusic(seed: string): MusicHandle {
   function tick(now: number): void {
     if (!running) return
     if (now >= nextStepAt) {
-      const beatMs = 60000 / mood.bpm
+      const level = combatLevel()
+      applyMix(level)
+      const beatMs = 60000 / effectiveBpm()
       const stepMs = beatMs / 2  // 8th-note grid
 
       // Melody — 60% chance per step, weighted toward lower scale degrees.
@@ -151,5 +187,6 @@ export function createMusic(seed: string): MusicHandle {
     setMoodForDepth(d) {
       mood = MOODS[d] ?? MOODS[5]
     },
+    setWorldRef(get) { getWorld = get },
   }
 }

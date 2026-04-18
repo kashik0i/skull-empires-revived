@@ -199,6 +199,7 @@ async function main(): Promise<void> {
       },
     },
   )
+  music.setWorldRef(() => loop.getState())
 
   async function createReplacement() {
     const newSeed = randomSeed()
