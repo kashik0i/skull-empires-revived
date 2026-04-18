@@ -31,7 +31,7 @@ export function firstStepToward(state: World, from: Pos, to: Pos, opts: Pathfind
   function canEnter(x: number, y: number): boolean {
     if (x < 0 || y < 0 || x >= w || y >= h) return false
     const t = floor.tiles[y * w + x]
-    if (t !== Tile.Floor && t !== Tile.Stairs) return false
+    if (t !== Tile.Floor && t !== Tile.Stairs && t !== Tile.Shrine) return false
     if (occupied[y * w + x]) return false
     return true
   }
@@ -110,7 +110,7 @@ export function fullPathToward(state: World, from: Pos, to: Pos, opts: PathfindO
   function canEnter(x: number, y: number): boolean {
     if (x < 0 || y < 0 || x >= w || y >= h) return false
     const t = floor.tiles[y * w + x]
-    if (t !== Tile.Floor && t !== Tile.Stairs) return false
+    if (t !== Tile.Floor && t !== Tile.Stairs && t !== Tile.Shrine) return false
     if (occupied[y * w + x]) return false
     return true
   }

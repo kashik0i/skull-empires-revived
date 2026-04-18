@@ -96,6 +96,24 @@ export function renderWorld(
             Math.max(2, stepH - 1),
           )
         }
+      } else if (t === Tile.Shrine) {
+        if (atlasReady) {
+          drawTileSprite(ctx, 'floor_1', x, y, tileSize)
+        } else {
+          ctx.fillStyle = palette.deepPurpleLite
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1)
+        }
+        ctx.fillStyle = palette.silkFlameAmber
+        const cx = x * tileSize + tileSize / 2
+        const top = y * tileSize + Math.floor(tileSize * 0.2)
+        const pillarH = Math.floor(tileSize * 0.6)
+        const pillarW = Math.floor(tileSize * 0.25)
+        ctx.fillRect(cx - Math.floor(pillarW / 2), top, pillarW, pillarH)
+        ctx.fillStyle = palette.bloodCrimson
+        const flameY = top + Math.floor(Math.sin(performance.now() / 300) * 2)
+        ctx.beginPath()
+        ctx.arc(cx, flameY, Math.floor(tileSize * 0.12), 0, Math.PI * 2)
+        ctx.fill()
       }
     }
   }

@@ -48,6 +48,24 @@ export function moveActor(state: World, action: Extract<Action, { type: 'MoveAct
     }
   }
 
+  // Shrine trigger — hero only.
+  if (actor.id === state.heroId) {
+    const t = stateSoFar.floor.tiles[action.to.y * stateSoFar.floor.width + action.to.x]
+    if (t === Tile.Shrine) {
+      stateSoFar = {
+        ...stateSoFar,
+        pendingDialog: {
+          title: 'An altar hums.',
+          body: 'Blood from the bowl, or breath from the flame?',
+          actions: [
+            { label: 'Blood', resolve: { type: 'ResolveShrine', choice: 'blood', pos: action.to } },
+            { label: 'Breath', resolve: { type: 'ResolveShrine', choice: 'breath', pos: action.to } },
+          ],
+        },
+      }
+    }
+  }
+
   return stateSoFar
 }
 
@@ -72,7 +90,7 @@ function isWalkable(state: World, p: Pos): boolean {
   const { floor } = state
   if (p.x < 0 || p.y < 0 || p.x >= floor.width || p.y >= floor.height) return false
   const t = floor.tiles[p.y * floor.width + p.x]
-  return t === Tile.Floor || t === Tile.Stairs
+  return t === Tile.Floor || t === Tile.Stairs || t === Tile.Shrine
 }
 
 function isOccupied(state: World, p: Pos, ignore: ActorId): boolean {

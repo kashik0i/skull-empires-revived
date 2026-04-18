@@ -1,4 +1,5 @@
 import type { World, Action } from '../types'
+import { Tile } from '../types'
 import { listCardIds, getCard } from '../../content/cardLoader'
 import { nextU32 } from '../rng'
 
@@ -57,6 +58,24 @@ export function merchantTrade(state: World, action: MerchantTradeAction): World 
   }
 }
 
-export function resolveShrine(state: World, _action: ResolveShrineAction): World {
-  return state
+export function resolveShrine(state: World, action: ResolveShrineAction): World {
+  const heroId = state.heroId
+  const hero = state.actors[heroId]
+  if (!hero) return state
+
+  let nextHero = hero
+  if (action.choice === 'blood') {
+    nextHero = { ...hero, maxHp: hero.maxHp + 2, hp: hero.hp + 2 }
+  } else {
+    nextHero = { ...hero, atk: hero.atk + 1 }
+  }
+
+  const newTiles = new Uint8Array(state.floor.tiles)
+  newTiles[action.pos.y * state.floor.width + action.pos.x] = Tile.Floor
+
+  return {
+    ...state,
+    actors: { ...state.actors, [heroId]: nextHero },
+    floor: { ...state.floor, tiles: newTiles },
+  }
 }

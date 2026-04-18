@@ -1,5 +1,5 @@
 import type { RngState } from '../core/rng'
-import { nextU32 } from '../core/rng'
+import { nextFloat, nextU32 } from '../core/rng'
 import { Tile, type Floor, type Pos } from '../core/types'
 import { generateBsp } from './bsp'
 
@@ -59,6 +59,21 @@ export function generateFloor(
     const r = nextU32(rng)
     rng = r.state
     scrollPos = candidates[r.value % candidates.length]
+  }
+
+  // 25% chance to place a Shrine tile per floor.
+  const shrineRoll = nextFloat(rng)
+  rng = shrineRoll.state
+  if (shrineRoll.value < 0.25) {
+    const shrineCandidates = candidates.filter(
+      p => !(scrollPos && scrollPos.x === p.x && scrollPos.y === p.y),
+    )
+    if (shrineCandidates.length > 0) {
+      const pick = nextU32(rng)
+      rng = pick.state
+      const sp = shrineCandidates[pick.value % shrineCandidates.length]
+      tiles[sp.y * width + sp.x] = Tile.Shrine
+    }
   }
 
   return {
