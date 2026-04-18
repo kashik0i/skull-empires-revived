@@ -28,6 +28,7 @@ describe('flag store', () => {
       pauseEnemies: false,
       invincibleHero: false,
       revealMap: false,
+      debugLog: false,
       volume: 0.5,
       tickSpeed: 1,
     })
@@ -112,6 +113,7 @@ describe('flag store', () => {
       pauseEnemies: false,
       invincibleHero: false,
       revealMap: false,
+      debugLog: false,
       volume: 0.5,
       tickSpeed: 1,
     })

@@ -22,7 +22,7 @@ import { createDbClient } from './persistence/db/client'
 import { resolveInitialRun } from './persistence/autoResume'
 import { computeCameraOffset } from './render/camera'
 import type { CameraOffset } from './render/camera'
-import { appendDevLog, resetDevLog, logDevEvent } from './dev/runLog'
+import { appendDevLog, resetDevLog, logDevEvent, setRunId, setStreamingEnabled } from './dev/runLog'
 import { loadAtlas } from './render/sprites'
 
 const TILE_SIZE = 24
@@ -60,9 +60,11 @@ async function main(): Promise<void> {
 
   let world = initialWorld
 
+  setRunId(runId)
+
   // Persist the run start for new/url-sourced runs
   if (source !== 'db') {
-    resetDevLog()
+    resetDevLog(runId)
     await dbClient.startRun(runId, seed)
     // For url-sourced runs, replay-write the pre-existing log into DB
     if (source === 'url') {
@@ -74,8 +76,10 @@ async function main(): Promise<void> {
   }
 
   const flags = createFlags()
+  setStreamingEnabled(flags.get().debugLog)
   let lastFlagsJson = JSON.stringify(flags.get())
   flags.subscribe(next => {
+    setStreamingEnabled(next.debugLog)
     const nextJson = JSON.stringify(next)
     if (nextJson !== lastFlagsJson) {
       logDevEvent('flags', { flags: next })
@@ -126,6 +130,7 @@ async function main(): Promise<void> {
     loop.submit({ type: 'PickCardReward', cardId })
   })
   const devMenu = mountDevMenu(hudContainer, flags)
+  devMenu.setRunId(runId)
   attachDevMenuHotkey(devMenu)
 
   // FPS tracker: exponential moving average of 1/dtMs.
@@ -192,7 +197,9 @@ async function main(): Promise<void> {
     const newRunId = crypto.randomUUID()
     currentRunId = newRunId
     logOffset = 0
-    resetDevLog()
+    setRunId(newRunId)
+    resetDevLog(newRunId)
+    devMenu.setRunId(newRunId)
     const newWorld = createInitialWorld(newSeed)
     loop.replaceState(newWorld)
     display.sync(loop.getState())

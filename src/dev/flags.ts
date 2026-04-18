@@ -6,6 +6,8 @@ export type Flags = {
   pauseEnemies: boolean
   invincibleHero: boolean
   revealMap: boolean
+  /** When true (dev mode only), stream every action to .debug/{runId}.jsonl. */
+  debugLog: boolean
   volume: number
   /** Tick speed multiplier: 1 = normal (300ms/tick), <1 = slower, >1 = faster. */
   tickSpeed: number
@@ -17,6 +19,7 @@ const DEFAULTS: Flags = {
   pauseEnemies: false,
   invincibleHero: false,
   revealMap: false,
+  debugLog: false,
   volume: 0.5,
   tickSpeed: 1,
 }

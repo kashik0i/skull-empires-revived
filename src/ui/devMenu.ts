@@ -6,6 +6,7 @@ export type DevMenu = {
   show(): void
   hide(): void
   setFps(fps: number): void
+  setRunId(id: string): void
   isOpen(): boolean
 }
 
@@ -24,7 +25,8 @@ const FLAG_UI: FlagConfig[] = [
   { key: 'showHeroPath',   label: 'Show hero path',  hint: 'Draw the hero\u2019s cached BFS path' },
   { key: 'pauseEnemies',   label: 'Pause enemies',   hint: 'Freeze enemy turns' },
   { key: 'invincibleHero', label: 'Invincible hero', hint: 'Hero takes no damage' },
-  { key: 'revealMap',      label: 'Reveal map',      hint: 'Disable fog of war' },
+  { key: 'revealMap',      label: 'Reveal map',      hint: 'Show enemy HP over each sprite' },
+  { key: 'debugLog',       label: 'Debug log',       hint: 'Stream actions to .debug/{runId}.jsonl' },
 ]
 
 // Slider snaps — covers slow debugging → very fast playtesting.
@@ -183,6 +185,46 @@ export function mountDevMenu(container: HTMLElement, flags: FlagStore): DevMenu 
   speedRow.appendChild(speedReadout)
   root.appendChild(speedRow)
 
+  // Run-ID readout — click to copy. Amber color so it stands out.
+  const runIdRow = document.createElement('div')
+  Object.assign(runIdRow.style, {
+    marginTop: '8px',
+    padding: '6px 0 3px 0',
+    borderTop: '1px solid rgba(90, 62, 138, 0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  } satisfies Partial<CSSStyleDeclaration>)
+
+  const runIdLabel = document.createElement('span')
+  runIdLabel.textContent = 'Run'
+  Object.assign(runIdLabel.style, { flex: '0 0 auto' } satisfies Partial<CSSStyleDeclaration>)
+
+  const runIdValue = document.createElement('code')
+  Object.assign(runIdValue.style, {
+    flex: '1 1 auto',
+    fontFamily: 'ui-monospace, monospace',
+    color: '#f0b770',
+    cursor: 'pointer',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  } satisfies Partial<CSSStyleDeclaration>)
+  runIdValue.textContent = '—'
+  runIdValue.title = 'Click to copy full ID'
+  let fullRunId = ''
+  runIdValue.addEventListener('click', () => {
+    if (!fullRunId) return
+    void navigator.clipboard?.writeText(fullRunId).catch(() => {})
+    const prev = runIdValue.textContent
+    runIdValue.textContent = 'copied!'
+    setTimeout(() => { runIdValue.textContent = prev }, 800)
+  })
+
+  runIdRow.appendChild(runIdLabel)
+  runIdRow.appendChild(runIdValue)
+  root.appendChild(runIdRow)
+
   const hint = document.createElement('div')
   hint.textContent = 'Press ` to toggle'
   Object.assign(hint.style, {
@@ -218,7 +260,12 @@ export function mountDevMenu(container: HTMLElement, flags: FlagStore): DevMenu 
   // initial fps-line visibility
   fpsLine.style.display = flags.get().showFps ? 'block' : 'none'
 
-  return { root, toggle, show, hide, setFps, isOpen }
+  function setRunId(id: string) {
+    fullRunId = id
+    runIdValue.textContent = id.slice(0, 8)
+  }
+
+  return { root, toggle, show, hide, setFps, setRunId, isOpen }
 }
 
 export function attachDevMenuHotkey(menu: DevMenu, key = '`'): () => void {
