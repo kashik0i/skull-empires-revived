@@ -9,7 +9,7 @@ describe('resolveHeroAction', () => {
     expect(action).toBeNull()
   })
 
-  it('auto-attacks an adjacent enemy regardless of intent', () => {
+  it('auto-attacks an adjacent enemy only when hero has no intent', () => {
     const base = createInitialWorld('ha-2')
     const enemyId = Object.keys(base.actors).find(id => id !== base.heroId)!
     const hero = base.actors[base.heroId]
@@ -19,10 +19,25 @@ describe('resolveHeroAction', () => {
         ...base.actors,
         [enemyId]: { ...base.actors[enemyId], pos: { x: hero.pos.x + 1, y: hero.pos.y } },
       },
-      heroIntent: { kind: 'move-to' as const, goal: { x: hero.pos.x + 10, y: hero.pos.y } },
     }
     const action = resolveHeroAction(w)
     expect(action).toEqual({ type: 'AttackActor', attackerId: hero.id, targetId: enemyId })
+  })
+
+  it('honors move-to intent over auto-defend so the hero can retreat', () => {
+    const base = createInitialWorld('ha-2b')
+    const enemyId = Object.keys(base.actors).find(id => id !== base.heroId)!
+    const hero = base.actors[base.heroId]
+    const w = {
+      ...base,
+      actors: {
+        ...base.actors,
+        [enemyId]: { ...base.actors[enemyId], pos: { x: hero.pos.x + 1, y: hero.pos.y } },
+      },
+      heroIntent: { kind: 'move-to' as const, goal: { x: hero.pos.x - 3, y: hero.pos.y } },
+    }
+    const action = resolveHeroAction(w)
+    expect(action?.type).toBe('MoveActor')
   })
 
   it('picks lowest-HP adjacent enemy when multiple threats', () => {

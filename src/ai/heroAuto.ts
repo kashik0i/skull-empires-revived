@@ -7,23 +7,23 @@ import { firstStepToward, fullPathToward, manhattan } from './pathfind'
  * Returns an array of actions to apply (zero, one, or two — e.g. SetHeroPath + MoveActor).
  *
  * Rules:
- *   1. Auto-defend: if any alive enemy is adjacent, attack the one with lowest HP.
- *   2. Attack intent: pathfind toward the target each turn (target is mobile). If target dead or unreachable, clear intent.
- *   3. Move-to intent: follow the cached path if valid; otherwise recompute once. Clear intent when goal reached or unreachable.
- *   4. No intent, no threat: return [] (hero idles).
+ *   1. Player intent wins — interact / attack / move-to are honored even with adjacent enemies,
+ *      so the player can retreat, shop, or pick a specific target without the hero auto-stealing control.
+ *   2. Auto-defend only when idle: if no intent and an enemy is adjacent, attack the lowest-HP one.
+ *   3. No intent, no threat: return [] (hero idles).
  */
 export function resolveHeroActions(state: World): Action[] {
   const hero = state.actors[state.heroId]
   if (!hero || !hero.alive) return []
 
-  // 1. Auto-defend — takes precedence over intent.
-  const adjacent = findAdjacentEnemy(state, hero.pos)
-  if (adjacent) {
-    return [{ type: 'AttackActor', attackerId: hero.id, targetId: adjacent }]
-  }
-
   const intent = state.heroIntent
-  if (!intent) return []
+  if (!intent) {
+    const adjacent = findAdjacentEnemy(state, hero.pos)
+    if (adjacent) {
+      return [{ type: 'AttackActor', attackerId: hero.id, targetId: adjacent }]
+    }
+    return []
+  }
 
   if (intent.kind === 'interact') {
     const target = state.actors[intent.targetId]
