@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { devLogPlugin } from './scripts/vite-dev-log'
 
 // COOP/COEP enable cross-origin isolation → SharedArrayBuffer → OPFS VFS for sqlite-wasm.
 const crossOriginIsolationHeaders = {
@@ -7,6 +8,7 @@ const crossOriginIsolationHeaders = {
 }
 
 export default defineConfig({
+  plugins: [devLogPlugin()],
   server: {
     port: 5173,
     headers: crossOriginIsolationHeaders,

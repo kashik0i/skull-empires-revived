@@ -22,6 +22,7 @@ import { createDbClient } from './persistence/db/client'
 import { resolveInitialRun } from './persistence/autoResume'
 import { computeCameraOffset } from './render/camera'
 import type { CameraOffset } from './render/camera'
+import { appendDevLog, resetDevLog } from './dev/runLog'
 
 const TILE_SIZE = 24
 const PARTICLE_CAP = 500
@@ -57,11 +58,13 @@ async function main(): Promise<void> {
 
   // Persist the run start for new/url-sourced runs
   if (source !== 'db') {
+    resetDevLog()
     await dbClient.startRun(runId, seed)
     // For url-sourced runs, replay-write the pre-existing log into DB
     if (source === 'url') {
       for (let i = 0; i < resumedFromLog.length; i++) {
         dbClient.appendEvent(runId, i, 0, JSON.stringify(resumedFromLog[i]))
+        appendDevLog(resumedFromLog[i], world, i, 'replay')
       }
     }
   }
@@ -162,6 +165,7 @@ async function main(): Promise<void> {
       onAction(action, state) {
         const idx = logOffset++
         dbClient.appendEvent(currentRunId, idx, state.tick, JSON.stringify(action))
+        appendDevLog(action, state, idx)
         if (action.type === 'RunEnd') {
           const outcome = action.outcome === 'won' ? 'win' : 'loss'
           void dbClient.endRun(currentRunId, outcome, state.tick)
@@ -175,6 +179,7 @@ async function main(): Promise<void> {
     const newRunId = crypto.randomUUID()
     currentRunId = newRunId
     logOffset = 0
+    resetDevLog()
     const newWorld = createInitialWorld(newSeed)
     loop.replaceState(newWorld)
     display.sync(loop.getState())
