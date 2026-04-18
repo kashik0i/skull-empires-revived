@@ -14,6 +14,7 @@ import { createFxCanvas } from './render/fx/canvas'
 import { wirePresets } from './render/fx/presets'
 import { createSfx } from './audio/sfx'
 import { wireAudio } from './audio/subscribe'
+import { createMusic } from './audio/music'
 import { createFlags } from './dev/flags'
 import { mountDevMenu, attachDevMenuHotkey } from './ui/devMenu'
 import { createDbClient } from './persistence/db/client'
@@ -111,6 +112,10 @@ async function main(): Promise<void> {
   ], { volume: 0.5 })
   wireAudio(bus, sfx, world.heroId)
 
+  const music = createMusic(world.seed)
+  music.setMoodForDepth(world.run.depth)
+  flags.subscribe(next => { music.setVolume(next.volume * 0.5) })
+
   const hud = mountHud(hudContainer)
   hud.onDescend(() => loop.submit({ type: 'Descend' }))
   const minimap = mountMinimap(hudContainer)
@@ -186,6 +191,7 @@ async function main(): Promise<void> {
         const idx = logOffset++
         dbClient.appendEvent(currentRunId, idx, state.tick, JSON.stringify(action))
         appendDevLog(action, state, idx)
+        if (action.type === 'Descend') music.setMoodForDepth(state.run.depth)
         if (action.type === 'RunEnd') {
           const outcome = action.outcome === 'won' ? 'win' : 'loss'
           void dbClient.endRun(currentRunId, outcome, state.tick)
@@ -245,6 +251,14 @@ async function main(): Promise<void> {
   })
 
   loop.start()
+
+  const unlockOnce = () => {
+    music.start()
+    window.removeEventListener('mousedown', unlockOnce)
+    window.removeEventListener('keydown', unlockOnce)
+  }
+  window.addEventListener('mousedown', unlockOnce)
+  window.addEventListener('keydown', unlockOnce)
 }
 
 main()
