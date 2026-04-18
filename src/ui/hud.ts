@@ -1,4 +1,5 @@
 import { Tile, type World } from '../core/types'
+import { effectiveAtk, effectiveDef } from '../core/selectors'
 
 export type Hud = {
   update(state: World): void
@@ -146,8 +147,8 @@ export function mountHud(container: HTMLElement): Hud {
         : ratio < 0.6
           ? 'linear-gradient(90deg, #f0b770, #b7753e)'
           : 'linear-gradient(90deg, #e0bdf7, #b7a3d9)'
-      atkStat.setValue(String(hero.atk))
-      defStat.setValue(String(hero.def))
+      atkStat.setValue(String(effectiveAtk(state, state.heroId)))
+      defStat.setValue(String(effectiveDef(state, state.heroId)))
     }
     depthStat.setValue(`${state.run.depth}/5`)
 
