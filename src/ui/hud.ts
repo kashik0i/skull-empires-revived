@@ -31,6 +31,7 @@ export function mountHud(container: HTMLElement): Hud {
     color: '#eadbc0',
     fontVariantNumeric: 'tabular-nums',
     zIndex: '3',
+    pointerEvents: 'none',
   } satisfies Partial<CSSStyleDeclaration>)
 
   const hpBox = document.createElement('div')

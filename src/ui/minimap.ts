@@ -22,6 +22,7 @@ export function mountMinimap(container: HTMLElement): Minimap {
     imageRendering: 'pixelated',
     zIndex: '3',
     boxShadow: '0 2px 10px rgba(0, 0, 0, 0.4)',
+    pointerEvents: 'none',
   } satisfies Partial<CSSStyleDeclaration>)
   container.appendChild(canvas)
   const ctx = canvas.getContext('2d')!
