@@ -7,6 +7,7 @@ export type DisplayActor = {
   tx: number; ty: number
   tweenT: number
   tweenDurationMs: number
+  facing: 'left' | 'right'
   lunge: null | {
     origin: Pos
     target: Pos
@@ -52,9 +53,12 @@ export function createDisplayState(): DisplayState {
             tx: actor.pos.x, ty: actor.pos.y,
             tweenT: 1,
             tweenDurationMs: MOVE_DURATION_MS,
+            facing: 'right',
             lunge: null,
           })
         } else if (existing.tx !== actor.pos.x || existing.ty !== actor.pos.y) {
+          if (actor.pos.x < existing.tx) existing.facing = 'left'
+          else if (actor.pos.x > existing.tx) existing.facing = 'right'
           existing.sx = existing.tx
           existing.sy = existing.ty
           existing.tx = actor.pos.x

@@ -50,4 +50,23 @@ describe('merchant interaction', () => {
     const action = intentForClick(state, npcPos)
     expect(action).toEqual({ type: 'SetHeroIntent', intent: { kind: 'interact', targetId: 'merchant-d2' } })
   })
+
+  it('MerchantTrade clears any pending dialog', () => {
+    const state: World = {
+      ...withMerchant('m-4'),
+      pendingDialog: { title: 't', body: 'b', actions: [] },
+    }
+    const next = dispatch(state, { type: 'MerchantTrade', cardId: 'heal', merchantId: 'merchant-d2' })
+    expect(next.pendingDialog).toBeNull()
+  })
+
+  it('hero walking onto merchant tile swaps positions', () => {
+    const state = withMerchant('m-5')
+    const heroId = state.heroId
+    const heroStart = state.actors[heroId].pos
+    const merchantStart = state.actors['merchant-d2'].pos
+    const next = dispatch(state, { type: 'MoveActor', actorId: heroId, to: merchantStart })
+    expect(next.actors[heroId].pos).toEqual(merchantStart)
+    expect(next.actors['merchant-d2'].pos).toEqual(heroStart)
+  })
 })

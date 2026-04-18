@@ -103,20 +103,28 @@ export function drawSprite(
   cy: number,
   tileSize: number,
   nowMs?: number,
+  flipX = false,
 ): boolean {
   if (!atlas) return false
   const f = FRAMES[name]
   if (!f) return false
   const frame = currentFrameIndex(f.frames, nowMs)
   const sx = f.x + frame * f.w
-  // Scale so width matches tileSize; height scales proportionally.
   const scale = tileSize / 16
   const dw = f.w * scale
   const dh = f.h * scale
-  // Anchor to bottom-center of the tile.
   const dx = cx - dw / 2
   const dy = cy + tileSize / 2 - dh
-  ctx.drawImage(atlas, sx, f.y, f.w, f.h, dx, dy, dw, dh)
+  if (flipX) {
+    ctx.save()
+    ctx.translate(cx, 0)
+    ctx.scale(-1, 1)
+    ctx.translate(-cx, 0)
+    ctx.drawImage(atlas, sx, f.y, f.w, f.h, dx, dy, dw, dh)
+    ctx.restore()
+  } else {
+    ctx.drawImage(atlas, sx, f.y, f.w, f.h, dx, dy, dw, dh)
+  }
   return true
 }
 

@@ -6,7 +6,12 @@ export function moveActor(state: World, action: Extract<Action, { type: 'MoveAct
   if (!actor || !actor.alive) return state
   if (!isAdjacent(actor.pos, action.to)) return state
   if (!isWalkable(state, action.to)) return state
-  if (isOccupied(state, action.to, action.actorId)) return state
+
+  // NPC-swap: hero stepping onto an NPC tile pushes the NPC back to the hero's
+  // origin tile. Other actors remain hard blockers.
+  const blocker = blockerAt(state, action.to, action.actorId)
+  const isHeroSwap = blocker !== null && blocker.kind === 'npc' && action.actorId === state.heroId
+  if (blocker && !isHeroSwap) return state
 
   const movedActor = { ...actor, pos: action.to }
   let droppedItems = state.droppedItems
@@ -21,13 +26,18 @@ export function moveActor(state: World, action: Extract<Action, { type: 'MoveAct
     }
   }
 
+  const actorsUpdated: Record<ActorId, Actor> = {
+    ...state.actors,
+    [action.actorId]: finalActor,
+  }
+  if (isHeroSwap && blocker) {
+    actorsUpdated[blocker.id] = { ...blocker, pos: actor.pos }
+  }
+
   let stateSoFar: World = {
     ...state,
     droppedItems,
-    actors: {
-      ...state.actors,
-      [action.actorId]: finalActor,
-    },
+    actors: actorsUpdated,
   }
 
   // Scroll pickup — hero only.
@@ -48,8 +58,8 @@ export function moveActor(state: World, action: Extract<Action, { type: 'MoveAct
     }
   }
 
-  // Shrine trigger — hero only.
-  if (actor.id === state.heroId) {
+  // Shrine trigger — hero only, and only if a scroll pickup didn't already claim the dialog slot.
+  if (actor.id === state.heroId && !stateSoFar.pendingDialog) {
     const t = stateSoFar.floor.tiles[action.to.y * stateSoFar.floor.width + action.to.x]
     if (t === Tile.Shrine) {
       stateSoFar = {
@@ -93,11 +103,11 @@ function isWalkable(state: World, p: Pos): boolean {
   return t === Tile.Floor || t === Tile.Stairs || t === Tile.Shrine
 }
 
-function isOccupied(state: World, p: Pos, ignore: ActorId): boolean {
+function blockerAt(state: World, p: Pos, ignore: ActorId): Actor | null {
   for (const id in state.actors) {
     if (id === ignore) continue
     const a = state.actors[id]
-    if (a.alive && a.pos.x === p.x && a.pos.y === p.y) return true
+    if (a.alive && a.pos.x === p.x && a.pos.y === p.y) return a
   }
-  return false
+  return null
 }

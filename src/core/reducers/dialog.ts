@@ -48,6 +48,7 @@ export function merchantTrade(state: World, action: MerchantTradeAction): World 
     ...state,
     actors,
     turnOrder: state.turnOrder.filter(id => id !== action.merchantId),
+    pendingDialog: null,
     run: {
       ...state.run,
       cards: {

@@ -36,8 +36,8 @@ export function resolveHeroActions(state: World): Action[] {
         { type: 'SetHeroIntent', intent: null },
       ]
     }
-    // Step toward target; pass through target's tile so BFS can reach adjacent.
-    const step = firstStepToward(state, hero.pos, target.pos, { passThroughActors: [target.id] })
+    // Step toward target; pass through any NPC tile so BFS can reach adjacent.
+    const step = firstStepToward(state, hero.pos, target.pos, { passThroughActors: npcIds(state) })
     if (!step) return [{ type: 'SetHeroIntent', intent: null }]
     return [{ type: 'MoveActor', actorId: hero.id, to: step }]
   }
@@ -48,7 +48,7 @@ export function resolveHeroActions(state: World): Action[] {
       return [{ type: 'SetHeroIntent', intent: null }]
     }
     // No caching: target moves, path may change each turn.
-    const path = fullPathToward(state, hero.pos, target.pos, { passThroughActors: [target.id] })
+    const path = fullPathToward(state, hero.pos, target.pos, { passThroughActors: [target.id, ...npcIds(state)] })
     if (!path || path.length === 0) {
       return [{ type: 'SetHeroIntent', intent: null }]
     }
@@ -69,8 +69,8 @@ export function resolveHeroActions(state: World): Action[] {
         ]
       }
     }
-    // Cache missing or blocked — recompute.
-    const path = fullPathToward(state, hero.pos, intent.goal)
+    // Cache missing or blocked — recompute. NPCs are pass-through so a merchant never strands the hero.
+    const path = fullPathToward(state, hero.pos, intent.goal, { passThroughActors: npcIds(state) })
     if (!path || path.length === 0) {
       return [{ type: 'SetHeroIntent', intent: null }]
     }
@@ -109,11 +109,24 @@ function findAdjacentEnemy(state: World, pos: Pos): ActorId | null {
 function isStepValid(state: World, step: Pos, heroId: ActorId): boolean {
   const { floor } = state
   if (step.x < 0 || step.y < 0 || step.x >= floor.width || step.y >= floor.height) return false
-  if (floor.tiles[step.y * floor.width + step.x] !== Tile.Floor) return false
+  const t = floor.tiles[step.y * floor.width + step.x]
+  if (t !== Tile.Floor && t !== Tile.Stairs && t !== Tile.Shrine) return false
   for (const id in state.actors) {
     if (id === heroId) continue
     const a = state.actors[id]
-    if (a.alive && a.pos.x === step.x && a.pos.y === step.y) return false
+    if (!a.alive) continue
+    if (a.pos.x !== step.x || a.pos.y !== step.y) continue
+    if (a.kind === 'npc') continue // NPCs allow swap-past on move
+    return false
   }
   return true
+}
+
+function npcIds(state: World): ActorId[] {
+  const ids: ActorId[] = []
+  for (const id in state.actors) {
+    const a = state.actors[id]
+    if (a.kind === 'npc' && a.alive) ids.push(id)
+  }
+  return ids
 }

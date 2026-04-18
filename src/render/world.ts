@@ -183,7 +183,9 @@ export function renderWorld(
       ctx.globalAlpha = 1
     }
 
-    const drewSprite = atlasReady && def.sprite ? drawSprite(ctx, def.sprite, cx, cy, tileSize) : false
+    const drewSprite = atlasReady && def.sprite
+      ? drawSprite(ctx, def.sprite, cx, cy, tileSize, undefined, d.facing === 'left')
+      : false
     if (!drewSprite) {
       drawShape(ctx, def.shape, cx, cy, tileSize, key => palette[key])
     }
