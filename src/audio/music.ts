@@ -129,6 +129,16 @@ export function createMusic(seed: string): MusicHandle {
     src.start()
   }
 
+  function playHarmony(freq: number, durMs: number): void {
+    const osc = ctx.createOscillator(), env = ctx.createGain()
+    osc.type = 'sine'; osc.frequency.value = freq
+    env.gain.setValueAtTime(0, ctx.currentTime)
+    env.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.1)
+    env.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + durMs / 1000)
+    osc.connect(env).connect(harmonyGain)
+    osc.start(); osc.stop(ctx.currentTime + durMs / 1000 + 0.05)
+  }
+
   function tick(now: number): void {
     if (!running) return
     if (now >= nextStepAt) {
@@ -148,6 +158,10 @@ export function createMusic(seed: string): MusicHandle {
       // Bass on downbeat (every 8 steps).
       if (stepIdx % 8 === 0) {
         playBass(freqAt(mood.root, mood.scale[0], -1), beatMs * 4)
+        if (mood.bossHarmony) {
+          // Third above the bass root (scale[2] is the minor third in our scales).
+          playHarmony(freqAt(mood.root, mood.scale[2], 0), beatMs * 4)
+        }
       }
       // Bass fifth on beat 3 (step 4 of the bar).
       if (stepIdx % 8 === 4) {
@@ -186,6 +200,7 @@ export function createMusic(seed: string): MusicHandle {
     },
     setMoodForDepth(d) {
       mood = MOODS[d] ?? MOODS[5]
+      harmonyGain.gain.setTargetAtTime(mood.bossHarmony ? 0.5 : 0.0, ctx.currentTime, 0.5)
     },
     setWorldRef(get) { getWorld = get },
   }
