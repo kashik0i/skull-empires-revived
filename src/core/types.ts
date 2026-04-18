@@ -73,7 +73,7 @@ export type Floor = {
   spawns: Pos[]
 }
 
-export type Phase = 'exploring' | 'card_reward' | 'run_won' | 'run_lost'
+export type Phase = 'exploring' | 'run_won' | 'run_lost'
 
 export type LogEntry = { tick: number; text: string }
 
@@ -82,17 +82,10 @@ export type HeroIntent =
   | { kind: 'attack'; targetId: ActorId }
   | { kind: 'interact'; targetId: ActorId }
 
-export type RunCards = {
-  deck: string[]
-  hand: string[]
-  discard: string[]
-}
-
 export type LoreScroll = { id: string; pos: Pos; fragmentIndex: number }
 
 export type DialogAction =
   | { type: 'ResolveShrine'; choice: 'blood' | 'breath'; pos: Pos }
-  | { type: 'MerchantTrade'; cardId: string; merchantId: ActorId }
   | { type: 'MerchantBuyItem'; itemId: string; merchantId: ActorId }
   | { type: 'ClearDialog' }
 
@@ -124,9 +117,7 @@ export type World = {
   groundItems: DroppedItemInstance[]
   run: {
     depth: number
-    cards: RunCards
-    pendingReward: null | { choices: string[] }
-    /** Set after a card reward has been offered on this floor; reset on Descend. */
+    /** Set after a reward has been offered on this floor; reset on Descend. */
     rewardedThisFloor: boolean
     pendingItemReward: string[] | null
   }
@@ -141,11 +132,7 @@ export type Action =
   | { type: 'SetHeroIntent'; intent: HeroIntent | null }
   | { type: 'SetHeroPath'; path: Pos[] }
   | { type: 'Descend' }
-  | { type: 'PlayCard'; cardId: string; targetId?: ActorId }
-  | { type: 'OfferCardReward'; choices: string[] }
-  | { type: 'PickCardReward'; cardId: string }
   | { type: 'OpenMerchantDialog'; merchantId: ActorId }
-  | { type: 'MerchantTrade'; cardId: string; merchantId: ActorId }
   | { type: 'ResolveShrine'; choice: 'blood' | 'breath'; pos: Pos }
   | { type: 'ClearDialog' }
   | { type: 'UseItem'; instanceId: string }

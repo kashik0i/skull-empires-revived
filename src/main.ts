@@ -4,8 +4,6 @@ import { intentForClick } from './input/intent'
 import { renderWorld } from './render/world'
 import { mountHud } from './ui/hud'
 import { mountOverlay } from './ui/overlay'
-import { mountCardHand } from './ui/cardHand'
-import { mountCardReward } from './ui/cardReward'
 import { attachDevInput } from './input/dev'
 import { encodeRun } from './persistence/url'
 import { createDisplayState } from './render/display'
@@ -117,28 +115,6 @@ async function main(): Promise<void> {
   hud.onDescend(() => loop.submit({ type: 'Descend' }))
   const minimap = mountMinimap(hudContainer)
   const overlay = mountOverlay(hudContainer)
-  let targetingCardId: string | null = null
-  const cardHand = mountCardHand(
-    hudContainer,
-    (cardId, targetId) => {
-      targetingCardId = null
-      if (targetId) {
-        loop.submit({ type: 'PlayCard', cardId, targetId })
-      } else {
-        loop.submit({ type: 'PlayCard', cardId })
-      }
-    },
-    () => {
-      targetingCardId = cardHand.getTargetingCardId()
-    },
-    () => {
-      targetingCardId = null
-      cardHand.cancelTargeting()
-    },
-  )
-  const cardReward = mountCardReward(hudContainer, (cardId) => {
-    loop.submit({ type: 'PickCardReward', cardId })
-  })
   const dialog = mountDialog(hudContainer, (a) => loop.submit(a))
   const inventory = mountInventory(hudContainer, (a) => loop.submit(a))
   const itemReward = mountItemReward(hudContainer, (a) => loop.submit(a))
@@ -196,8 +172,6 @@ async function main(): Promise<void> {
       fx.draw(cameraOffset)
       hud.update(state)
       overlay.update(state)
-      cardReward.update(state)
-      cardHand.update(state)
       dialog.update(state)
       inventory.update(state)
       itemReward.update(state)
@@ -254,20 +228,6 @@ async function main(): Promise<void> {
       if (s.phase !== 'exploring') return
       // Block interaction with tiles the hero hasn't discovered.
       if (!tileIsKnown(s, tile)) return
-      // If targeting mode is active, try to play card on enemy at tile
-      if (targetingCardId) {
-        const actor = Object.values(s.actors).find(a => a.pos.x === tile.x && a.pos.y === tile.y && a.kind === 'enemy')
-        if (actor) {
-          loop.submit({ type: 'PlayCard', cardId: targetingCardId, targetId: actor.id })
-          targetingCardId = null
-          cardHand.cancelTargeting()
-        } else {
-          // Cancel targeting if not on enemy
-          targetingCardId = null
-          cardHand.cancelTargeting()
-        }
-        return
-      }
       const action = intentForClick(s, tile)
       if (action) loop.submit(action)
     },

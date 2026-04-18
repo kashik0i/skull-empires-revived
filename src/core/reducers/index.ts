@@ -5,7 +5,6 @@ import { turnAdvance } from './turn'
 import { runEnd, restart, offerItemReward, pickItemReward } from './run'
 import { setHeroIntent, setHeroPath } from './intent'
 import { descend } from './descend'
-import { playCard, offerCardReward, pickCardReward } from './card'
 import { clearDialog, openMerchantDialog, merchantBuyItem, resolveShrine } from './dialog'
 import { useItem, equipItem, unequipItem, pickupItem } from './inventory'
 
@@ -19,9 +18,6 @@ export function rootReducer(state: World, action: Action): World {
     case 'SetHeroIntent': return setHeroIntent(state, action)
     case 'SetHeroPath': return setHeroPath(state, action)
     case 'Descend': return descend(state)
-    case 'PlayCard': return playCard(state, action)
-    case 'OfferCardReward': return offerCardReward(state, action)
-    case 'PickCardReward': return pickCardReward(state, action)
     case 'ClearDialog': return clearDialog(state)
     case 'OpenMerchantDialog': return openMerchantDialog(state, action)
     case 'MerchantBuyItem': return merchantBuyItem(state, action)

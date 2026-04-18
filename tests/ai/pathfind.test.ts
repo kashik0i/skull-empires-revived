@@ -30,8 +30,6 @@ function emptyWorld(w: number, h: number) {
     groundItems: [],
     run: {
       depth: 1,
-      cards: { deck: [], hand: [], discard: [] },
-      pendingReward: null,
       rewardedThisFloor: false,
       pendingItemReward: null,
     },

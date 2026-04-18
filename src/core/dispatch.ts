@@ -67,11 +67,7 @@ function publishDiff(prev: World, next: World, action: Action, bus: FxBus): void
     case 'SetHeroIntent':
     case 'SetHeroPath':
     case 'Descend':
-    case 'PlayCard':
-    case 'OfferCardReward':
-    case 'PickCardReward':
     case 'OpenMerchantDialog':
-    case 'MerchantTrade':
     case 'ResolveShrine':
     case 'ClearDialog':
     case 'UseItem':
@@ -108,11 +104,7 @@ function describeAction(action: Action, state: World): string {
     }
     case 'SetHeroPath': return `hero path: ${action.path.length} step(s)`
     case 'Descend': return `descended to depth ${state.run.depth}`
-    case 'PlayCard': return `played card ${action.cardId}`
-    case 'OfferCardReward': return `offered card reward: ${action.choices.join(', ')}`
-    case 'PickCardReward': return `picked card reward: ${action.cardId}`
     case 'OpenMerchantDialog': return `opened merchant dialog: ${action.merchantId}`
-    case 'MerchantTrade': return `merchant trade: ${action.cardId}`
     case 'ResolveShrine': return `resolved shrine (${action.pos.x},${action.pos.y}): ${action.choice}`
     case 'ClearDialog': return 'dialog cleared'
     case 'UseItem': return `used item ${action.instanceId}`

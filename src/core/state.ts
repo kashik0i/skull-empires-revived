@@ -2,7 +2,6 @@ import { createRng, nextU32 } from './rng'
 import type { Actor, ActorId, Floor, LoreScroll, World } from './types'
 import { generateFloor } from '../procgen/floor'
 import { getArchetype } from '../content/loader'
-import { listCardIds } from '../content/cardLoader'
 import type { RngState } from './rng'
 
 export const FLOOR_W = 40
@@ -149,13 +148,6 @@ export function createInitialWorld(seed: string): World {
   const enemies = spawnEnemiesOnFloor(spawns, 1, compositionForDepth(1))
   Object.assign(actors, enemies)
 
-  // Shuffle the starter deck and draw 3 into hand
-  const allCardIds = listCardIds()
-  const { result: shuffled, rng: rng3 } = shuffleWithRng(allCardIds, rng)
-  rng = rng3
-  const hand = shuffled.splice(0, 3)
-  const deck = shuffled
-
   const loreScrolls: LoreScroll[] = scrollPos
     ? [{ id: 'scroll-d1', pos: scrollPos, fragmentIndex: 0 }]
     : []
@@ -183,12 +175,6 @@ export function createInitialWorld(seed: string): World {
     groundItems: [],
     run: {
       depth: 1,
-      cards: {
-        deck,
-        hand,
-        discard: [],
-      },
-      pendingReward: null,
       rewardedThisFloor: false,
       pendingItemReward: null,
     },
