@@ -28,6 +28,8 @@ import { mountMinimap } from './ui/minimap'
 import { mountDialog } from './ui/dialog'
 import { mountInventory } from './ui/inventory'
 import { mountItemReward } from './ui/itemReward'
+import { mountSidePanel } from './ui/sidePanel'
+import { mountMusicControls } from './ui/musicControls'
 
 const TILE_SIZE = 24
 const PARTICLE_CAP = 500
@@ -46,7 +48,6 @@ function randomSeed(): string {
 async function main(): Promise<void> {
   const worldCanvas = document.getElementById('world') as HTMLCanvasElement
   const fxCanvas = document.getElementById('fx') as HTMLCanvasElement
-  const hudContainer = document.getElementById('hud') as HTMLDivElement
   const worldCtx = worldCanvas.getContext('2d')
   const fxCtx = fxCanvas.getContext('2d')
   if (!worldCtx || !fxCtx) throw new Error('canvas 2d context unavailable')
@@ -131,14 +132,21 @@ async function main(): Promise<void> {
   music.setMoodForDepth(world.run.depth)
   flags.subscribe(next => { music.setVolume(next.volume * 0.5) })
 
-  const hud = mountHud(hudContainer)
+  const sidePanelEl = document.getElementById('side-panel') as HTMLDivElement
+  const playEl = document.getElementById('play') as HTMLDivElement
+  const modalEl = document.getElementById('modal-layer') as HTMLDivElement
+
+  const panel = mountSidePanel(sidePanelEl)
+  const minimap = mountMinimap(panel.slot('minimap'))
+  const hud = mountHud(panel.slot('stats'), panel.slot('descend'), playEl)
+  const inventory = mountInventory(panel.slot('equipment'), panel.slot('inventory'), (a) => loop.submit(a))
+  mountMusicControls(panel.slot('music'), music)
   hud.onDescend(() => loop.submit({ type: 'Descend' }))
-  const minimap = mountMinimap(hudContainer)
-  const overlay = mountOverlay(hudContainer)
-  const dialog = mountDialog(hudContainer, (a) => loop.submit(a))
-  const inventory = mountInventory(hudContainer, (a) => loop.submit(a))
-  const itemReward = mountItemReward(hudContainer, (a) => loop.submit(a))
-  const devMenu = mountDevMenu(hudContainer, flags)
+
+  const overlay = mountOverlay(modalEl)
+  const dialog = mountDialog(modalEl, (a) => loop.submit(a))
+  const itemReward = mountItemReward(modalEl, (a) => loop.submit(a))
+  const devMenu = mountDevMenu(modalEl, flags)
   devMenu.setRunId(runId)
   attachDevMenuHotkey(devMenu)
 
