@@ -48,8 +48,19 @@ const FRAMES: Record<string, SpriteFrame> = {
 
   // Items (consumable flasks) — 16×16
   flask_red:      { x: 288, y: 240, w: 16, h: 16, frames: 1 },
+  flask_big_red:  { x: 288, y: 224, w: 16, h: 16, frames: 1 },
   flask_blue:     { x: 304, y: 240, w: 16, h: 16, frames: 1 },
   flask_yellow:   { x: 336, y: 240, w: 16, h: 16, frames: 1 },
+
+  // Weapons — varied sizes from 0x72
+  weapon_rusty_sword:    { x: 307, y: 26, w: 10, h: 21, frames: 1 },
+  weapon_regular_sword:  { x: 323, y: 26, w: 10, h: 21, frames: 1 },
+  weapon_red_gem_sword:  { x: 339, y: 26, w: 10, h: 21, frames: 1 },
+
+  // Armor — 0x72 has no armor sprites; using skull as placeholder
+  armor_cloth:    { x: 288, y: 320, w: 16, h: 16, frames: 1 },
+  armor_leather:  { x: 288, y: 320, w: 16, h: 16, frames: 1 },
+  armor_plate:    { x: 288, y: 320, w: 16, h: 16, frames: 1 },
 
   // Lore scroll pickup — 16×16 (uses flask_green as fallback)
   scroll:         { x: 320, y: 240, w: 16, h: 16, frames: 1 },
