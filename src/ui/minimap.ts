@@ -59,6 +59,7 @@ export function mountMinimap(container: HTMLElement): Minimap {
         if (t === Tile.Floor) color = palette.deepPurpleLite
         else if (t === Tile.Wall) color = palette.deepPurple
         else if (t === Tile.Stairs) color = palette.silkFlameAmber
+        else if (t === Tile.Shrine) color = palette.bloodCrimson
         if (color) {
           ctx.fillStyle = color
           ctx.fillRect(x * MINIMAP_SCALE, y * MINIMAP_SCALE, MINIMAP_SCALE, MINIMAP_SCALE)
@@ -72,6 +73,14 @@ export function mountMinimap(container: HTMLElement): Minimap {
       if (!everythingVisible && !seenTiles![idx]) continue
       ctx.fillStyle = palette.silkFlameAmber
       ctx.fillRect(item.pos.x * MINIMAP_SCALE, item.pos.y * MINIMAP_SCALE, MINIMAP_SCALE, MINIMAP_SCALE)
+    }
+
+    // Scrolls — only if tile is currently seen
+    for (const scroll of state.loreScrolls) {
+      const idx = scroll.pos.y * floor.width + scroll.pos.x
+      if (!everythingVisible && !seenTiles![idx]) continue
+      ctx.fillStyle = palette.silkFlameAmber
+      ctx.fillRect(scroll.pos.x * MINIMAP_SCALE, scroll.pos.y * MINIMAP_SCALE, MINIMAP_SCALE, MINIMAP_SCALE)
     }
 
     // Actors — hero always, enemies only if tile is seen
