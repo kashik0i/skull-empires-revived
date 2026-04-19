@@ -14,22 +14,68 @@
         --deep-dark: #1a1024;
         --amber: #f0b770;
         --void: #0b0612;
+        --panel-bg: #14091e;
+        --panel-border: #5a3e8a;
       }
       html, body { margin: 0; height: 100%; background: var(--void); color: var(--bone); font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
       .font-gothic { font-family: 'UnifrakturMaguntia', ui-serif, Georgia, serif; letter-spacing: 0.03em; }
-      #stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
-      #world, #fx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+      #stage {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        grid-template-rows: 1fr;
+      }
+      #play {
+        position: relative;
+        overflow: hidden;
+      }
+      #world, #fx {
+        position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+      }
       #world { z-index: 1; image-rendering: pixelated; }
       #fx    { z-index: 2; pointer-events: none; }
-      #hud   { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
-      #hud > * { pointer-events: auto; }
+
+      #side-panel {
+        background: var(--panel-bg);
+        border-left: 1px solid var(--panel-border);
+        overflow-y: auto;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+
+      /* Modal overlays still float above everything */
+      #modal-layer { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+      #modal-layer > * { pointer-events: auto; }
+
+      @media (max-width: 768px) {
+        #stage {
+          grid-template-columns: 1fr;
+          grid-template-rows: 1fr auto;
+        }
+        #side-panel {
+          border-left: none;
+          border-top: 1px solid var(--panel-border);
+          max-height: 50vh;
+        }
+      }
     </style>
   </head>
   <body>
     <div id="stage">
-      <canvas id="world" width="960" height="720"></canvas>
-      <canvas id="fx"    width="960" height="720"></canvas>
-      <div id="hud"></div>
+      <div id="play">
+        <canvas id="world" width="960" height="720"></canvas>
+        <canvas id="fx"    width="960" height="720"></canvas>
+      </div>
+      <div id="side-panel"></div>
+      <div id="modal-layer"></div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

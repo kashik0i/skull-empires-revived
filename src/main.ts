@@ -17,6 +17,7 @@ import { wireAudio } from './audio/subscribe'
 import { createMusic } from './audio/music'
 import { createFlags } from './dev/flags'
 import { mountDevMenu, attachDevMenuHotkey } from './ui/devMenu'
+import { encodeMidi, downloadMidi } from './audio/midiExport'
 import { createDbClient } from './persistence/db/client'
 import { resolveInitialRun } from './persistence/autoResume'
 import { computeCameraOffset } from './render/camera'
@@ -28,6 +29,9 @@ import { mountMinimap } from './ui/minimap'
 import { mountDialog } from './ui/dialog'
 import { mountInventory } from './ui/inventory'
 import { mountItemReward } from './ui/itemReward'
+import { mountSidePanel } from './ui/sidePanel'
+import { mountMusicControls } from './ui/musicControls'
+import { createResponsive } from './dev/responsive'
 
 const TILE_SIZE = 24
 const PARTICLE_CAP = 500
@@ -46,10 +50,24 @@ function randomSeed(): string {
 async function main(): Promise<void> {
   const worldCanvas = document.getElementById('world') as HTMLCanvasElement
   const fxCanvas = document.getElementById('fx') as HTMLCanvasElement
-  const hudContainer = document.getElementById('hud') as HTMLDivElement
   const worldCtx = worldCanvas.getContext('2d')
   const fxCtx = fxCanvas.getContext('2d')
   if (!worldCtx || !fxCtx) throw new Error('canvas 2d context unavailable')
+
+  function resizeCanvases(): void {
+    const playEl = document.getElementById('play') as HTMLElement
+    const w = Math.max(64, Math.floor(playEl.clientWidth))
+    const h = Math.max(64, Math.floor(playEl.clientHeight))
+    for (const c of [worldCanvas, fxCanvas]) {
+      if (c.width !== w || c.height !== h) {
+        c.width = w
+        c.height = h
+      }
+    }
+  }
+
+  resizeCanvases()
+  new ResizeObserver(resizeCanvases).observe(document.getElementById('play') as HTMLElement)
 
   // Fire-and-forget — renderer falls back to procedural shapes until this resolves.
   void loadAtlas().catch(err => console.warn('[sprites] atlas failed to load', err))
@@ -116,16 +134,39 @@ async function main(): Promise<void> {
   music.setMoodForDepth(world.run.depth)
   flags.subscribe(next => { music.setVolume(next.volume * 0.5) })
 
-  const hud = mountHud(hudContainer)
+  const sidePanelEl = document.getElementById('side-panel') as HTMLDivElement
+  const playEl = document.getElementById('play') as HTMLDivElement
+  const modalEl = document.getElementById('modal-layer') as HTMLDivElement
+
+  const responsive = createResponsive()
+  const panel = mountSidePanel(sidePanelEl, responsive)
+  const minimap = mountMinimap(panel.slot('minimap'))
+  const hud = mountHud(panel.slot('stats'), panel.slot('descend'), playEl)
+  const inventory = mountInventory(panel.slot('equipment'), panel.slot('inventory'), (a) => loop.submit(a))
+  const musicCtl = mountMusicControls(panel.slot('music'), music)
   hud.onDescend(() => loop.submit({ type: 'Descend' }))
-  const minimap = mountMinimap(hudContainer)
-  const overlay = mountOverlay(hudContainer)
-  const dialog = mountDialog(hudContainer, (a) => loop.submit(a))
-  const inventory = mountInventory(hudContainer, (a) => loop.submit(a))
-  const itemReward = mountItemReward(hudContainer, (a) => loop.submit(a))
-  const devMenu = mountDevMenu(hudContainer, flags)
+
+  const overlay = mountOverlay(modalEl)
+  const dialog = mountDialog(modalEl, (a) => loop.submit(a))
+  const itemReward = mountItemReward(modalEl, (a) => loop.submit(a))
+  const devMenu = mountDevMenu(modalEl, flags)
   devMenu.setRunId(runId)
   attachDevMenuHotkey(devMenu)
+
+  devMenu.onExportMidi(() => {
+    const cap = music.getCapture()
+    if (cap.notes.length === 0) {
+      console.warn('[midi] capture buffer empty — play for a few seconds first')
+      return
+    }
+    const bytes = encodeMidi(cap.notes, cap.bpm)
+    const filename = `skull-empires-${world.seed}-d${cap.depth}.mid`
+    downloadMidi(bytes, filename)
+  })
+
+  document.addEventListener('visibilitychange', () => {
+    musicCtl.setMuted(document.hidden)
+  })
 
   // FPS tracker: exponential moving average of 1/dtMs.
   let emaFps = 60
@@ -199,6 +240,7 @@ async function main(): Promise<void> {
       },
     },
   )
+  music.setWorldRef(() => loop.getState())
 
   async function createReplacement() {
     const newSeed = randomSeed()
@@ -227,6 +269,18 @@ async function main(): Promise<void> {
     const vis = computeVisible(s.floor, hero.pos)
     return vis[idx] === 1
   }
+
+  playEl.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return
+    e.preventDefault()
+    const t = e.touches[0]
+    const synth = new MouseEvent('click', {
+      bubbles: true, cancelable: true,
+      clientX: t.clientX, clientY: t.clientY,
+      button: 0,
+    })
+    worldCanvas.dispatchEvent(synth)
+  }, { passive: false })
 
   attachDevInput(worldCanvas, TILE_SIZE, {
     onTileClick(tile) {

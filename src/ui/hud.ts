@@ -5,106 +5,83 @@ export type Hud = {
   update(state: World): void
   root: HTMLElement
   onDescend(cb: () => void): void
+  descendButton(): HTMLElement
 }
 
-export function mountHud(container: HTMLElement): Hud {
-  container.replaceChildren()
-
+export function mountHud(statsSlot: HTMLElement, descendSlot: HTMLElement, logParent: HTMLElement): Hud {
+  // === Stats block (in side panel) ===
   const root = document.createElement('div')
-  root.id = 'hud-root'
-
-  // ── Top status bar (HP / stats / floor) — compact, above everything ──
-  const topBar = document.createElement('div')
-  Object.assign(topBar.style, {
-    position: 'absolute',
-    top: '8px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    display: 'flex',
-    gap: '14px',
-    alignItems: 'center',
+  Object.assign(root.style, {
     background: 'rgba(11, 6, 18, 0.78)',
     border: '1px solid #5a3e8a',
-    borderRadius: '18px',
-    padding: '6px 14px',
+    borderRadius: '8px',
+    padding: '8px 10px',
     fontSize: '13px',
     color: '#eadbc0',
     fontVariantNumeric: 'tabular-nums',
-    zIndex: '3',
-    pointerEvents: 'none',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
   } satisfies Partial<CSSStyleDeclaration>)
+  statsSlot.appendChild(root)
 
+  // HP row
   const hpBox = document.createElement('div')
   Object.assign(hpBox.style, { display: 'flex', alignItems: 'center', gap: '6px' } satisfies Partial<CSSStyleDeclaration>)
-
   const hpBarOuter = document.createElement('div')
   Object.assign(hpBarOuter.style, {
-    width: '120px',
-    height: '10px',
-    background: '#1a1024',
-    border: '1px solid #3e2a5c',
-    borderRadius: '5px',
-    overflow: 'hidden',
+    flex: '1', height: '10px', background: '#1a1024',
+    border: '1px solid #3e2a5c', borderRadius: '5px', overflow: 'hidden',
   } satisfies Partial<CSSStyleDeclaration>)
   const hpBarInner = document.createElement('div')
   Object.assign(hpBarInner.style, {
-    height: '100%',
-    background: 'linear-gradient(90deg, #e0bdf7, #b7a3d9)',
-    width: '100%',
-    transition: 'width 120ms ease-out',
+    height: '100%', background: 'linear-gradient(90deg, #e0bdf7, #b7a3d9)',
+    width: '100%', transition: 'width 120ms ease-out',
   } satisfies Partial<CSSStyleDeclaration>)
   hpBarOuter.appendChild(hpBarInner)
-
   const hpText = document.createElement('span')
   hpText.style.minWidth = '54px'
   hpText.textContent = 'HP 20/20'
-
   hpBox.appendChild(hpBarOuter)
   hpBox.appendChild(hpText)
+  root.appendChild(hpBox)
 
-  const sep1 = makeSep()
+  // Stats row (atk/def/depth)
+  const statsRow = document.createElement('div')
+  Object.assign(statsRow.style, { display: 'flex', justifyContent: 'space-between' } satisfies Partial<CSSStyleDeclaration>)
   const atkStat = makeStat('⚔', '4')
-  const sep2 = makeSep()
   const defStat = makeStat('🛡', '1')
-  const sep3 = makeSep()
   const depthStat = makeStat('⬇', '1/5')
+  statsRow.appendChild(atkStat.el)
+  statsRow.appendChild(defStat.el)
+  statsRow.appendChild(depthStat.el)
+  root.appendChild(statsRow)
 
-  topBar.appendChild(hpBox)
-  topBar.appendChild(sep1)
-  topBar.appendChild(atkStat.el)
-  topBar.appendChild(sep2)
-  topBar.appendChild(defStat.el)
-  topBar.appendChild(sep3)
-  topBar.appendChild(depthStat.el)
-
-  // ── Descend button — shows below the top bar when hero stands on stairs ──
+  // === Descend button (in panel descend slot) ===
   const descendBtn = document.createElement('button')
   descendBtn.type = 'button'
   descendBtn.textContent = 'Descend ↓'
   Object.assign(descendBtn.style, {
-    position: 'absolute',
-    top: '52px',
-    left: '50%',
-    transform: 'translateX(-50%)',
+    width: '100%',
     background: '#5a3e8a',
     color: '#f5e6b0',
     border: '1px solid #f0b770',
     borderRadius: '6px',
-    padding: '8px 14px',
+    padding: '10px 14px',
     fontFamily: 'inherit',
-    fontSize: '13px',
+    fontSize: '14px',
     cursor: 'pointer',
     display: 'none',
-    zIndex: '3',
     boxShadow: '0 0 12px rgba(240, 183, 112, 0.4)',
   } satisfies Partial<CSSStyleDeclaration>)
+  descendSlot.appendChild(descendBtn)
 
-  // ── Log — bottom-left, small, filtered, fades old lines ──
+  // === Log panel (floats over the play area, bottom-left) ===
   const logPanel = document.createElement('div')
   Object.assign(logPanel.style, {
     position: 'absolute',
     left: '12px',
-    bottom: '80px',   // sits above the card hand
+    bottom: '12px',
     maxWidth: '280px',
     maxHeight: '110px',
     overflow: 'hidden',
@@ -115,21 +92,12 @@ export function mountHud(container: HTMLElement): Hud {
     pointerEvents: 'none',
     zIndex: '3',
   } satisfies Partial<CSSStyleDeclaration>)
-
-  root.appendChild(topBar)
-  root.appendChild(descendBtn)
-  root.appendChild(logPanel)
-  container.appendChild(root)
+  logParent.appendChild(logPanel)
 
   let descendCb: (() => void) | null = null
   descendBtn.addEventListener('click', () => { descendCb?.() })
 
-  // Lines we don't want cluttering the log.
   const NOISE_PREFIXES = ['turn advance', 'hero intent', 'hero path']
-
-  // Per-line fade: each line ages from its own bornAt. When the visible set
-  // exceeds MAX_VISIBLE_LINES, the oldest excess are forced into a fast
-  // fade-out so the queue recycles line-by-line instead of all at once.
   const FADE_LIFE_MS = 6000
   const MAX_VISIBLE_LINES = 5
   const OVERFLOW_EVICT_MS = 500
@@ -157,7 +125,6 @@ export function mountHud(container: HTMLElement): Hud {
       && state.floor.tiles[hero.pos.y * state.floor.width + hero.pos.x] === Tile.Stairs
     descendBtn.style.display = heroOnStairs ? 'block' : 'none'
 
-    // Ingest any new log entries since last update (state.log only grows).
     if (state.log.length !== lastLogLen) {
       const now = performance.now()
       for (let i = lastLogLen; i < state.log.length; i++) {
@@ -178,10 +145,6 @@ export function mountHud(container: HTMLElement): Hud {
     }
 
     const now = performance.now()
-
-    // Overflow: force oldest excess lines into their fade-out phase so only
-    // MAX_VISIBLE_LINES stay at full opacity; they'll fade one-by-one as new
-    // lines arrive rather than the whole batch vanishing together.
     const overflow = liveLines.length - MAX_VISIBLE_LINES
     if (overflow > 0) {
       const forcedBornAt = now - (FADE_LIFE_MS - OVERFLOW_EVICT_MS)
@@ -190,8 +153,6 @@ export function mountHud(container: HTMLElement): Hud {
         if (line.bornAt > forcedBornAt) line.bornAt = forcedBornAt
       }
     }
-
-    // Fade each live line based on age, drop fully-faded lines.
     for (let i = liveLines.length - 1; i >= 0; i--) {
       const line = liveLines[i]
       const age = now - line.bornAt
@@ -200,7 +161,6 @@ export function mountHud(container: HTMLElement): Hud {
         liveLines.splice(i, 1)
         continue
       }
-      // Held at full opacity for 40% of life, then linear fade over remaining 60%.
       const held = FADE_LIFE_MS * 0.4
       const opacity = age < held ? 1 : 1 - (age - held) / (FADE_LIFE_MS - held)
       line.el.style.opacity = opacity.toFixed(3)
@@ -211,26 +171,13 @@ export function mountHud(container: HTMLElement): Hud {
     root,
     update,
     onDescend(cb) { descendCb = cb },
+    descendButton() { return descendBtn },
   }
-}
-
-function makeSep(): HTMLElement {
-  const sep = document.createElement('span')
-  Object.assign(sep.style, {
-    width: '1px',
-    height: '16px',
-    background: 'rgba(90, 62, 138, 0.7)',
-  } satisfies Partial<CSSStyleDeclaration>)
-  return sep
 }
 
 function makeStat(icon: string, initialValue: string): { el: HTMLElement; setValue: (v: string) => void } {
   const el = document.createElement('div')
-  Object.assign(el.style, {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-  } satisfies Partial<CSSStyleDeclaration>)
+  Object.assign(el.style, { display: 'flex', alignItems: 'center', gap: '4px' } satisfies Partial<CSSStyleDeclaration>)
   const iconEl = document.createElement('span')
   iconEl.textContent = icon
   iconEl.style.fontSize = '13px'
@@ -241,8 +188,6 @@ function makeStat(icon: string, initialValue: string): { el: HTMLElement; setVal
   el.appendChild(valueEl)
   return {
     el,
-    setValue(v: string) {
-      if (valueEl.textContent !== v) valueEl.textContent = v
-    },
+    setValue(v: string) { if (valueEl.textContent !== v) valueEl.textContent = v },
   }
 }

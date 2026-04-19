@@ -8,6 +8,7 @@ export type DevMenu = {
   setFps(fps: number): void
   setRunId(id: string): void
   isOpen(): boolean
+  onExportMidi(cb: () => void): void
 }
 
 type BooleanFlagKey = {
@@ -225,6 +226,24 @@ export function mountDevMenu(container: HTMLElement, flags: FlagStore): DevMenu 
   runIdRow.appendChild(runIdValue)
   root.appendChild(runIdRow)
 
+  const exportBtn = document.createElement('button')
+  exportBtn.type = 'button'
+  exportBtn.textContent = 'Export MIDI'
+  Object.assign(exportBtn.style, {
+    background: '#2a1a3e',
+    color: '#eadbc0',
+    border: '1px solid #5a3e8a',
+    borderRadius: '4px',
+    padding: '4px 8px',
+    fontSize: '11px',
+    cursor: 'pointer',
+    marginTop: '6px',
+  } satisfies Partial<CSSStyleDeclaration>)
+  root.appendChild(exportBtn)
+
+  let exportCb: (() => void) | null = null
+  exportBtn.addEventListener('click', () => exportCb?.())
+
   const hint = document.createElement('div')
   hint.textContent = 'Press ` to toggle'
   Object.assign(hint.style, {
@@ -265,7 +284,7 @@ export function mountDevMenu(container: HTMLElement, flags: FlagStore): DevMenu 
     runIdValue.textContent = id.slice(0, 8)
   }
 
-  return { root, toggle, show, hide, setFps, setRunId, isOpen }
+  return { root, toggle, show, hide, setFps, setRunId, isOpen, onExportMidi(cb: () => void) { exportCb = cb } }
 }
 
 export function attachDevMenuHotkey(menu: DevMenu, key = '`'): () => void {
