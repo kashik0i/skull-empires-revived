@@ -4,18 +4,19 @@ import type { ParticlePool } from './particles'
 import type { FxCanvas } from './canvas'
 import type { DisplayState } from '../display'
 
-const TILE_SIZE = 24
-
-function posPx(x: number, y: number): { x: number; y: number } {
-  return { x: x * TILE_SIZE + TILE_SIZE / 2, y: y * TILE_SIZE + TILE_SIZE / 2 }
-}
-
 export function wirePresets(
   bus: FxBus,
   canvas: FxCanvas,
   particles: ParticlePool,
   display: DisplayState,
+  getTileSize: () => number = () => 24,
 ): () => void {
+  const tileSize = () => getTileSize()
+  const posPx = (x: number, y: number) => ({
+    x: x * tileSize() + tileSize() / 2,
+    y: y * tileSize() + tileSize() / 2,
+  })
+
   return bus.subscribe((event: FxEvent) => {
     switch (event.kind) {
       case 'moved':
@@ -29,12 +30,12 @@ export function wirePresets(
         const p = posPx(event.pos.x, event.pos.y)
         canvas.spawnFlash({
           x: p.x, y: p.y,
-          radiusPx: TILE_SIZE * 0.45,
+          radiusPx: tileSize() * 0.45,
           color: palette.boneWhite,
           ageMs: 0, lifeMs: 120,
         })
         canvas.spawnFloat({
-          x: p.x, y: p.y - TILE_SIZE * 0.3,
+          x: p.x, y: p.y - tileSize() * 0.3,
           vy: 30,
           text: `-${event.amount}`,
           color: palette.bloodCrimson,
@@ -42,7 +43,7 @@ export function wirePresets(
           ageMs: 0, lifeMs: 600,
         })
         if (event.isHero) {
-          canvas.spawnShake({ amplitudePx: 3, freqHz: 40, ageMs: 0, lifeMs: 100 })
+          canvas.spawnShake({ amplitudePx: 4, freqHz: 40, ageMs: 0, lifeMs: 200 })
         }
         return
       }
@@ -58,6 +59,7 @@ export function wirePresets(
           color: palette.boneWhite,
           gravity: 80,
         })
+        canvas.spawnShake({ amplitudePx: 2, freqHz: 50, ageMs: 0, lifeMs: 120 })
         return
       }
       case 'card-played': {
@@ -65,7 +67,7 @@ export function wirePresets(
         canvas.spawnFlash({
           x: (target ?? { x: 480 }).x,
           y: (target ?? { y: 320 }).y,
-          radiusPx: TILE_SIZE * 2,
+          radiusPx: tileSize() * 2,
           color: palette.silkFlameAmber,
           ageMs: 0, lifeMs: 200,
         })
@@ -83,8 +85,12 @@ export function wirePresets(
         }
         return
       }
-      case 'run-ended':
+      case 'run-ended': {
+        if (event.outcome === 'lost') {
+          canvas.spawnShake({ amplitudePx: 8, freqHz: 35, ageMs: 0, lifeMs: 500 })
+        }
         return
+      }
     }
   })
 }
