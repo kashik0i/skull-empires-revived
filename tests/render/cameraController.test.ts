@@ -74,13 +74,13 @@ describe('cameraController', () => {
   })
 
   it('snap() forces the next update to land exactly on the target', () => {
-    const c = createCameraController({ lerpHz: 12 })
+    const c = createCameraController({ deadzoneFractionX: 0.4, deadzoneFractionY: 0.4, lerpHz: 12 })
     c.snap()
     update(c, 50 * tileSize, 50 * tileSize)
     // Without snap, the next big jump would lerp.
     c.snap()
     const out = update(c, 80 * tileSize, 50 * tileSize, 16)
-    expect(out.x).toBe(1596) // exactly target, no lerp
+    expect(out.x).toBe(1596) // exactly target, no lerp (dz=0.4 → target=1596)
   })
 
   it('current() reflects the most recent update output', () => {

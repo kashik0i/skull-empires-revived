@@ -24,8 +24,8 @@ type Opts = {
 }
 
 export function createCameraController(opts: Opts = {}): CameraController {
-  const dzx = opts.deadzoneFractionX ?? 0.4
-  const dzy = opts.deadzoneFractionY ?? 0.4
+  const dzx = opts.deadzoneFractionX ?? 0.3
+  const dzy = opts.deadzoneFractionY ?? 0.3
   const lerpHz = opts.lerpHz ?? 12
 
   let cur: CameraOffset = { x: 0, y: 0 }
