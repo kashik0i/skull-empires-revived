@@ -40,6 +40,11 @@ export function createLoop(
   let running = false
   let lastTickMs = 0
   let lastFrameMs = 0
+  // Real-time hero cadence — decouples hero pace from turn-order rotation so a
+  // lone-hero floor doesn't speed up to tick-rate just because no enemies share
+  // the rotation. Set to `getTickMs()` on each check so dev-menu tickSpeed still
+  // applies.
+  let lastHeroActMs = 0
 
   function apply(action: Action): void {
     if (
@@ -94,7 +99,15 @@ export function createLoop(
     const actor = state.actors[currentId]
     if (!actor || !actor.alive) return
     if (actor.kind === 'hero') {
-      for (const a of resolveHeroActions(state)) apply(a)
+      // Hero cooldown: never move faster than one action per tick interval in
+      // wall-clock time. When enemies are alive this is naturally paced by turn
+      // rotation; when the floor is clear the hero would otherwise tick at
+      // frame rate.
+      const now = performance.now()
+      if (now - lastHeroActMs < getTickMs()) return
+      const actions = resolveHeroActions(state)
+      if (actions.length > 0) lastHeroActMs = now
+      for (const a of actions) apply(a)
     } else {
       if (pauseEnemies()) return
       apply(decide(state, currentId))
@@ -137,7 +150,9 @@ export function createLoop(
           if (heroActions.length > 0) {
             for (const a of heroActions) apply(a)
             apply({ type: 'TurnAdvance' })
-            lastTickMs = performance.now()
+            const now = performance.now()
+            lastTickMs = now
+            lastHeroActMs = now
           }
         }
       }
