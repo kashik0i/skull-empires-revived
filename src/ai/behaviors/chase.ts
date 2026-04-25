@@ -3,10 +3,12 @@ import { firstStepToward, manhattan } from '../pathfind'
 
 /**
  * Enemies "see" the hero when a real BFS path of at most CHASE_RANGE steps
- * exists. Beyond that they idle — keeps far-room enemies from twitching
- * against walls and limits per-tick BFS cost to a small bounded region.
+ * exists. Beyond that they idle. Tuned low (6) on purpose: BFS-correct
+ * chase pathing is much more capable than the old greedy heuristic, so a
+ * larger radius makes every enemy within line-of-corridor swarm the hero
+ * — fine for combat, but it shuts down general traversal across a floor.
  */
-const CHASE_RANGE = 12
+const CHASE_RANGE = 6
 
 export function chaseHero(state: World, actorId: ActorId): Action {
   const actor = state.actors[actorId]
