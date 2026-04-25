@@ -1,11 +1,25 @@
-import { Tile, type World, type Action, type Actor, type ActorId, type Pos } from '../types'
+import { Tile, type World, type Action, type Actor, type ActorId, type Pos, type TileKind } from '../types'
 import { getLoreFragment } from '../../content/loreLoader'
-import { instantiateItem } from '../../content/itemLoader'
+import { instantiateItem, itemPoolForDepth } from '../../content/itemLoader'
+import { isPassable } from '../tile'
+import { nextU32 } from '../rng'
 
 export function moveActor(state: World, action: Extract<Action, { type: 'MoveActor' }>): World {
   const actor = state.actors[action.actorId]
   if (!actor || !actor.alive) return state
   if (!isAdjacent(actor.pos, action.to)) return state
+
+  // Door bump: closed door → opens but does not move the actor.
+  const targetIdx = action.to.y * state.floor.width + action.to.x
+  if (state.floor.tiles[targetIdx] === Tile.DoorClosed) {
+    const newTiles = new Uint8Array(state.floor.tiles)
+    newTiles[targetIdx] = Tile.DoorOpen
+    return {
+      ...state,
+      floor: { ...state.floor, tiles: newTiles },
+    }
+  }
+
   if (!isWalkable(state, action.to)) return state
 
   // NPC-swap: hero stepping onto an NPC tile pushes the NPC back to the hero's
@@ -81,6 +95,29 @@ export function moveActor(state: World, action: Extract<Action, { type: 'MoveAct
     }
   }
 
+  // Chest open: stepping onto a closed chest opens it and drops an item
+  // on the same tile. Hero only — enemies don't loot chests.
+  if (actor.id === stateSoFar.heroId) {
+    const idx = action.to.y * stateSoFar.floor.width + action.to.x
+    if (stateSoFar.floor.tiles[idx] === Tile.Chest) {
+      const tiles = new Uint8Array(stateSoFar.floor.tiles)
+      tiles[idx] = Tile.ChestOpen
+      const pool = itemPoolForDepth(stateSoFar.run.depth)
+      const r = nextU32(stateSoFar.rng)
+      const itemId = pool[r.value % pool.length]
+      const instanceId = `chest-${stateSoFar.tick}-${idx}`
+      stateSoFar = {
+        ...stateSoFar,
+        rng: r.state,
+        floor: { ...stateSoFar.floor, tiles },
+        groundItems: [
+          ...stateSoFar.groundItems,
+          { instanceId, itemId, pos: { x: action.to.x, y: action.to.y } },
+        ],
+      }
+    }
+  }
+
   return stateSoFar
 }
 
@@ -93,8 +130,7 @@ function isAdjacent(a: Pos, b: Pos): boolean {
 function isWalkable(state: World, p: Pos): boolean {
   const { floor } = state
   if (p.x < 0 || p.y < 0 || p.x >= floor.width || p.y >= floor.height) return false
-  const t = floor.tiles[p.y * floor.width + p.x]
-  return t === Tile.Floor || t === Tile.Stairs || t === Tile.Shrine
+  return isPassable(floor.tiles[p.y * floor.width + p.x] as TileKind)
 }
 
 function blockerAt(state: World, p: Pos, ignore: ActorId): Actor | null {
