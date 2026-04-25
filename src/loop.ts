@@ -110,7 +110,8 @@ export function createLoop(
       for (const a of actions) apply(a)
     } else {
       if (pauseEnemies()) return
-      apply(decide(state, currentId))
+      const action = decide(state, currentId)
+      if (action) apply(action)
     }
   }
 

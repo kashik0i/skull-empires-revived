@@ -26,9 +26,11 @@ function simulate(seed: string, heroActions: Action[]): { final: World; log: Act
       if (state !== before) log.push(a)
     } else if (actor && actor.kind !== 'hero' && actor.alive) {
       const a = decide(state, currentId)
-      const before = state
-      state = dispatch(state, a)
-      if (state !== before) log.push(a)
+      if (a) {
+        const before = state
+        state = dispatch(state, a)
+        if (state !== before) log.push(a)
+      }
     }
     const adv: Action = { type: 'TurnAdvance' }
     state = dispatch(state, adv); log.push(adv)
