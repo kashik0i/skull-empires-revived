@@ -7,9 +7,9 @@ import { firstStepToward, fullPathToward, manhattan } from './pathfind'
  * Returns an array of actions to apply (zero, one, or two — e.g. SetHeroPath + MoveActor).
  *
  * Rules:
- *   1. Player intent wins — interact / attack / move-to are honored even with adjacent enemies,
- *      so the player can retreat, shop, or pick a specific target without the hero auto-stealing control.
- *   2. Auto-defend only when idle: if no intent and an enemy is adjacent, attack the lowest-HP one.
+ *   1. Player intent wins when it can produce progress — move along path, swing at adjacent target, etc.
+ *   2. Auto-defend whenever the hero would otherwise idle: no intent, OR intent dead-ended this turn.
+ *      A dead-ended intent is cleared and the same turn is spent attacking an adjacent enemy.
  *   3. No intent, no threat: return [] (hero idles).
  */
 export function resolveHeroActions(state: World): Action[] {
@@ -17,19 +17,11 @@ export function resolveHeroActions(state: World): Action[] {
   if (!hero || !hero.alive) return []
 
   const intent = state.heroIntent
-  if (!intent) {
-    const adjacent = findAdjacentEnemy(state, hero.pos)
-    if (adjacent) {
-      return [{ type: 'AttackActor', attackerId: hero.id, targetId: adjacent }]
-    }
-    return []
-  }
+  if (!intent) return defendOrIdle(state, hero.pos, hero.id)
 
   if (intent.kind === 'interact') {
     const target = state.actors[intent.targetId]
-    if (!target || !target.alive) {
-      return [{ type: 'SetHeroIntent', intent: null }]
-    }
+    if (!target || !target.alive) return clearAndDefend(state, hero.pos, hero.id)
     if (manhattan(hero.pos, target.pos) === 1) {
       return [
         { type: 'OpenMerchantDialog', merchantId: target.id },
@@ -38,30 +30,26 @@ export function resolveHeroActions(state: World): Action[] {
     }
     // Step toward target; pass through any NPC tile so BFS can reach adjacent.
     const step = firstStepToward(state, hero.pos, target.pos, { passThroughActors: npcIds(state) })
-    if (!step) return [{ type: 'SetHeroIntent', intent: null }]
+    if (!step) return clearAndDefend(state, hero.pos, hero.id)
     return [{ type: 'MoveActor', actorId: hero.id, to: step }]
   }
 
   if (intent.kind === 'attack') {
     const target = state.actors[intent.targetId]
-    if (!target || !target.alive) {
-      return [{ type: 'SetHeroIntent', intent: null }]
-    }
+    if (!target || !target.alive) return clearAndDefend(state, hero.pos, hero.id)
     // Already adjacent — swing instead of trying to step onto the target's tile.
     if (manhattan(hero.pos, target.pos) === 1) {
       return [{ type: 'AttackActor', attackerId: hero.id, targetId: target.id }]
     }
     // No caching: target moves, path may change each turn.
     const path = fullPathToward(state, hero.pos, target.pos, { passThroughActors: [target.id, ...npcIds(state)] })
-    if (!path || path.length === 0) {
-      return [{ type: 'SetHeroIntent', intent: null }]
-    }
+    if (!path || path.length === 0) return clearAndDefend(state, hero.pos, hero.id)
     return [{ type: 'MoveActor', actorId: hero.id, to: path[0] }]
   }
 
   if (intent.kind === 'move-to') {
     if (hero.pos.x === intent.goal.x && hero.pos.y === intent.goal.y) {
-      return [{ type: 'SetHeroIntent', intent: null }]
+      return clearAndDefend(state, hero.pos, hero.id)
     }
     // Try the cached path first.
     if (state.heroPath.length > 0) {
@@ -75,9 +63,7 @@ export function resolveHeroActions(state: World): Action[] {
     }
     // Cache missing or blocked — recompute. NPCs are pass-through so a merchant never strands the hero.
     const path = fullPathToward(state, hero.pos, intent.goal, { passThroughActors: npcIds(state) })
-    if (!path || path.length === 0) {
-      return [{ type: 'SetHeroIntent', intent: null }]
-    }
+    if (!path || path.length === 0) return clearAndDefend(state, hero.pos, hero.id)
     return [
       { type: 'SetHeroPath', path: path.slice(1) },
       { type: 'MoveActor', actorId: hero.id, to: path[0] },
@@ -85,6 +71,22 @@ export function resolveHeroActions(state: World): Action[] {
   }
 
   return []
+}
+
+function defendOrIdle(state: World, pos: Pos, heroId: ActorId): Action[] {
+  const adj = findAdjacentEnemy(state, pos)
+  return adj ? [{ type: 'AttackActor', attackerId: heroId, targetId: adj }] : []
+}
+
+function clearAndDefend(state: World, pos: Pos, heroId: ActorId): Action[] {
+  const adj = findAdjacentEnemy(state, pos)
+  if (adj) {
+    return [
+      { type: 'SetHeroIntent', intent: null },
+      { type: 'AttackActor', attackerId: heroId, targetId: adj },
+    ]
+  }
+  return [{ type: 'SetHeroIntent', intent: null }]
 }
 
 /** Back-compat wrapper for tests that still expect a single action. */
