@@ -21,11 +21,19 @@ export function instantiateItem(id: string, instanceId: string): Item {
   return { ...getItemDef(id), instanceId }
 }
 
-/** Depth-tier pool: floor 1-2 commons; 3 mids; 4-5 highs. */
+/** Depth-tier pool: floor 1-2 commons; 3 mids; 4+ highs. */
 export function itemPoolForDepth(depth: number): readonly string[] {
   const commons = ['heal-small', 'rusty-blade', 'cloth-rags']
-  const mids = [...commons, 'strength-tonic', 'iron-tonic', 'iron-blade', 'leather-vest']
-  const highs = [...mids, 'heal-large', 'ember-blade', 'plate-mail']
+  const mids = [
+    ...commons,
+    'strength-tonic', 'iron-tonic', 'iron-blade', 'leather-vest',
+    'knight-blade', 'duel-blade',
+  ]
+  const highs = [
+    ...mids,
+    'heal-large', 'ember-blade', 'plate-mail',
+    'flame-blade', 'golden-blade', 'royal-blade',
+  ]
   if (depth <= 2) return commons
   if (depth === 3) return mids
   return highs
