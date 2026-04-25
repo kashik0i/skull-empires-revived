@@ -3,6 +3,8 @@ import { Tile, type ActorId, type Pos, type World } from '../core/types'
 export type PathfindOptions = {
   /** Actor IDs whose current tile should be treated as passable. Used when attacking — we path to the target's tile. */
   passThroughActors?: readonly ActorId[]
+  /** If set, abort BFS once the goal cannot be reached within this many steps; returns null. */
+  maxDepth?: number
 }
 
 /**
@@ -15,6 +17,7 @@ export function firstStepToward(state: World, from: Pos, to: Pos, opts: Pathfind
   const w = floor.width
   const h = floor.height
   const passThrough = new Set(opts.passThroughActors ?? [])
+  const maxDepth = opts.maxDepth ?? Infinity
 
   const occupied = new Uint8Array(w * h)
   for (const id in state.actors) {
@@ -25,7 +28,6 @@ export function firstStepToward(state: World, from: Pos, to: Pos, opts: Pathfind
       occupied[a.pos.y * w + a.pos.x] = 1
     }
   }
-  // Start tile is always passable for BFS (hero can step off it).
   occupied[from.y * w + from.x] = 0
 
   function canEnter(x: number, y: number): boolean {
@@ -38,8 +40,11 @@ export function firstStepToward(state: World, from: Pos, to: Pos, opts: Pathfind
 
   const prev = new Int32Array(w * h)
   prev.fill(-1)
+  const dist = new Int32Array(w * h)
+  dist.fill(-1)
   const startIdx = from.y * w + from.x
-  prev[startIdx] = startIdx // mark visited
+  prev[startIdx] = startIdx
+  dist[startIdx] = 0
 
   const queue: number[] = [startIdx]
   const goalIdx = to.y * w + to.x
@@ -47,6 +52,7 @@ export function firstStepToward(state: World, from: Pos, to: Pos, opts: Pathfind
   while (queue.length > 0) {
     const cur = queue.shift()!
     if (cur === goalIdx) { found = true; break }
+    if (dist[cur] >= maxDepth) continue
     const cx = cur % w
     const cy = (cur - cx) / w
     const dx = Math.sign(to.x - cx) || 1
@@ -62,6 +68,7 @@ export function firstStepToward(state: World, from: Pos, to: Pos, opts: Pathfind
       const ni = ny * w + nx
       if (prev[ni] !== -1) continue
       prev[ni] = cur
+      dist[ni] = dist[cur] + 1
       queue.push(ni)
     }
   }

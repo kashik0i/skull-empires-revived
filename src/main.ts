@@ -16,11 +16,11 @@ import { createSfx } from './audio/sfx'
 import { wireAudio } from './audio/subscribe'
 import { createMusic } from './audio/music'
 import { createFlags } from './dev/flags'
-import { mountDevMenu, attachDevMenuHotkey } from './ui/devMenu'
+import { mountDevMenu, attachMenuHotkeys } from './ui/devMenu'
+import { mountHelpMenu } from './ui/helpMenu'
 import { encodeMidi, downloadMidi } from './audio/midiExport'
 import { createDbClient } from './persistence/db/client'
 import { resolveInitialRun } from './persistence/autoResume'
-import { computeCameraOffset } from './render/camera'
 import type { CameraOffset } from './render/camera'
 import { appendDevLog, resetDevLog, logDevEvent, setRunId, setStreamingEnabled } from './dev/runLog'
 import { loadAtlas } from './render/sprites'
@@ -32,10 +32,67 @@ import { mountItemReward } from './ui/itemReward'
 import { mountSidePanel } from './ui/sidePanel'
 import { mountMusicControls } from './ui/musicControls'
 import { createResponsive } from './dev/responsive'
+import { createCameraController } from './render/cameraController'
+import { createZoom, ZOOM_STEPS, ZOOM_DEFAULT_INDEX } from './ui/zoom'
 
-const TILE_SIZE = 24
 const PARTICLE_CAP = 500
 const BASE_TICK_MS = 300
+
+function mountZoomRow(parent: HTMLElement, zoom: ReturnType<typeof createZoom>): void {
+  const root = document.createElement('div')
+  Object.assign(root.style, {
+    background: 'rgba(11, 6, 18, 0.6)',
+    border: '1px solid #5a3e8a',
+    borderRadius: '6px',
+    padding: '6px 8px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '12px',
+  } satisfies Partial<CSSStyleDeclaration>)
+
+  const out = document.createElement('button')
+  out.type = 'button'
+  out.textContent = '−'
+  out.title = 'Zoom out (-)'
+
+  const readout = document.createElement('span')
+  readout.style.flex = '1'
+  readout.style.textAlign = 'center'
+
+  const inb = document.createElement('button')
+  inb.type = 'button'
+  inb.textContent = '+'
+  inb.title = 'Zoom in (+)'
+
+  for (const b of [out, inb]) {
+    Object.assign(b.style, {
+      background: '#2a1a3e',
+      color: '#eadbc0',
+      border: '1px solid #5a3e8a',
+      borderRadius: '4px',
+      padding: '4px 8px',
+      cursor: 'pointer',
+      fontSize: '12px',
+      minWidth: '28px',
+    } satisfies Partial<CSSStyleDeclaration>)
+  }
+
+  function refresh() {
+    const pct = Math.round(zoom.tileSize() / ZOOM_STEPS[ZOOM_DEFAULT_INDEX] * 100)
+    readout.textContent = `${pct}%`
+  }
+  refresh()
+  zoom.subscribe(refresh)
+
+  out.addEventListener('click', () => zoom.zoomOut())
+  inb.addEventListener('click', () => zoom.zoomIn())
+
+  root.appendChild(out)
+  root.appendChild(readout)
+  root.appendChild(inb)
+  parent.appendChild(root)
+}
 
 function floorKey(w: { run: { depth: number }; seed: string }): string {
   return `${w.seed}:${w.run.depth}`
@@ -113,13 +170,16 @@ async function main(): Promise<void> {
     }
   })
 
+  const zoom = createZoom()
+  const camera = createCameraController()
+
   const bus = createFxBus()
   const particles = createParticles({ capacity: PARTICLE_CAP })
   const tweens = createTweens()
   const display = createDisplayState()
   display.sync(world)
   const fx = createFxCanvas(fxCtx, particles, tweens)
-  wirePresets(bus, fx, particles, display)
+  wirePresets(bus, fx, particles, display, () => zoom.tileSize())
 
   const sfx = createSfx([
     { id: 'step',   src: '/audio/step.mp3',   poolSize: 1 },
@@ -143,15 +203,17 @@ async function main(): Promise<void> {
   const minimap = mountMinimap(panel.slot('minimap'))
   const hud = mountHud(panel.slot('stats'), panel.slot('descend'), playEl)
   const inventory = mountInventory(panel.slot('equipment'), panel.slot('inventory'), (a) => loop.submit(a))
+  mountZoomRow(panel.slot('zoom'), zoom)
   const musicCtl = mountMusicControls(panel.slot('music'), music)
   hud.onDescend(() => loop.submit({ type: 'Descend' }))
 
   const overlay = mountOverlay(modalEl)
   const dialog = mountDialog(modalEl, (a) => loop.submit(a))
   const itemReward = mountItemReward(modalEl, (a) => loop.submit(a))
-  const devMenu = mountDevMenu(modalEl, flags)
+  const devMenu = mountDevMenu(panel.slot('menu'), flags)
   devMenu.setRunId(runId)
-  attachDevMenuHotkey(devMenu)
+  const helpMenu = mountHelpMenu(panel.slot('menu'))
+  attachMenuHotkeys(devMenu, helpMenu)
 
   devMenu.onExportMidi(() => {
     const cap = music.getCapture()
@@ -193,22 +255,25 @@ async function main(): Promise<void> {
       fx.tick(dtMs)
       bus.drain()
       const heroDisp = display.get(state.heroId) ?? state.actors[state.heroId].pos
-      cameraOffset = computeCameraOffset(
-        { x: heroDisp.x * TILE_SIZE, y: heroDisp.y * TILE_SIZE },
-        TILE_SIZE,
-        worldCanvas.width,
-        worldCanvas.height,
-        state.floor.width,
-        state.floor.height,
-      )
+      const tileSize = zoom.tileSize()
+      cameraOffset = camera.update({
+        heroDisplay: { x: heroDisp.x * tileSize, y: heroDisp.y * tileSize },
+        tileSize,
+        viewportW: worldCanvas.width,
+        viewportH: worldCanvas.height,
+        floorW: state.floor.width,
+        floorH: state.floor.height,
+        dtMs,
+      })
       // Reset fog memory whenever the floor swaps.
       const nextKey = floorKey(state)
       if (nextKey !== lastFloorKey) {
         seenTiles = new Uint8Array(state.floor.width * state.floor.height)
         lastFloorKey = nextKey
+        camera.snap()
       }
       renderWorld(worldCtx, state, display, {
-        tileSize: TILE_SIZE,
+        tileSize,
         shakeOffset: fx.currentShakeOffset(),
         cameraOffset,
         showHeroPath: flags.get().showHeroPath,
@@ -242,6 +307,17 @@ async function main(): Promise<void> {
   )
   music.setWorldRef(() => loop.getState())
 
+  zoom.subscribe(() => camera.snap())
+
+  window.addEventListener('keydown', (e) => {
+    if (loop.getState().pendingDialog !== null) return
+    const tag = (e.target as HTMLElement | null)?.tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+    if (e.key === '+' || e.key === '=') { e.preventDefault(); zoom.zoomIn() }
+    else if (e.key === '-') { e.preventDefault(); zoom.zoomOut() }
+    else if (e.key === '0') { e.preventDefault(); zoom.reset() }
+  })
+
   async function createReplacement() {
     const newSeed = randomSeed()
     const newRunId = crypto.randomUUID()
@@ -255,6 +331,7 @@ async function main(): Promise<void> {
     display.sync(loop.getState())
     seenTiles = new Uint8Array(newWorld.floor.width * newWorld.floor.height)
     lastFloorKey = floorKey(newWorld)
+    camera.snap()
     await dbClient.startRun(newRunId, newSeed)
   }
 
@@ -282,7 +359,18 @@ async function main(): Promise<void> {
     worldCanvas.dispatchEvent(synth)
   }, { passive: false })
 
-  attachDevInput(worldCanvas, TILE_SIZE, {
+  let lastZoomMs = 0
+  worldCanvas.addEventListener('wheel', (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return
+    e.preventDefault()
+    const now = performance.now()
+    if (now - lastZoomMs < 80) return
+    lastZoomMs = now
+    if (e.deltaY < 0) zoom.zoomIn()
+    else if (e.deltaY > 0) zoom.zoomOut()
+  }, { passive: false })
+
+  attachDevInput(worldCanvas, () => zoom.tileSize(), {
     onTileClick(tile) {
       const s = loop.getState()
       if (s.phase !== 'exploring') return

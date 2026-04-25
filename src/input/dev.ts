@@ -10,7 +10,7 @@ export type DevInputHandlers = {
 
 export function attachDevInput(
   canvas: HTMLCanvasElement,
-  tileSize: number,
+  tileSizeGetter: () => number,
   handlers: DevInputHandlers,
   cameraOffsetGetter: () => CameraOffset = () => ({ x: 0, y: 0 }),
 ): () => void {
@@ -21,7 +21,7 @@ export function attachDevInput(
       e.clientY,
       rect,
       { width: canvas.width, height: canvas.height },
-      tileSize,
+      tileSizeGetter(),
       cameraOffsetGetter(),
     )
     handlers.onTileClick(tile)

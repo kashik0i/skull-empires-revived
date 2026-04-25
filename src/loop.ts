@@ -118,9 +118,14 @@ export function createLoop(
     if (!running) return
     const dtMs = lastFrameMs === 0 ? 16 : nowMs - lastFrameMs
     lastFrameMs = nowMs
-    // Freeze enemy/hero ticks while a dialog is open so the player can read
-     // the modal without taking damage from adjacent enemies.
-    if (state.phase === 'exploring' && state.pendingDialog === null && nowMs - lastTickMs >= getTickMs()) {
+    // Each actor in turnOrder should get a turn every getTickMs() of wall-clock
+    // time. With N alive actors, that means rotating through them in N steps
+    // takes N*step ms, so step = tickMs/N keeps per-actor cadence constant
+    // regardless of how many enemies share the floor.
+    let aliveCount = 0
+    for (const id of state.turnOrder) if (state.actors[id]?.alive) aliveCount++
+    const step = getTickMs() / Math.max(1, aliveCount)
+    if (state.phase === 'exploring' && state.pendingDialog === null && nowMs - lastTickMs >= step) {
       lastTickMs = nowMs
       runCurrentActor()
       apply({ type: 'TurnAdvance' })

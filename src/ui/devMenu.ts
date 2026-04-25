@@ -1,4 +1,5 @@
 import type { FlagStore, Flags } from '../dev/flags'
+import type { HelpMenu } from './helpMenu'
 
 export type DevMenu = {
   root: HTMLElement
@@ -37,9 +38,6 @@ export function mountDevMenu(container: HTMLElement, flags: FlagStore): DevMenu 
   const root = document.createElement('div')
   root.id = 'dev-menu'
   Object.assign(root.style, {
-    position: 'absolute',
-    right: '12px',
-    top: '12px',
     background: 'rgba(10, 5, 15, 0.88)',
     border: '1px solid #5a3e8a',
     padding: '10px 14px',
@@ -47,9 +45,7 @@ export function mountDevMenu(container: HTMLElement, flags: FlagStore): DevMenu 
     fontSize: '12px',
     fontFamily: 'ui-sans-serif, system-ui, sans-serif',
     color: '#c9b3e8',
-    minWidth: '200px',
     display: 'none',
-    zIndex: '10',
   } satisfies Partial<CSSStyleDeclaration>)
 
   const title = document.createElement('div')
@@ -245,7 +241,7 @@ export function mountDevMenu(container: HTMLElement, flags: FlagStore): DevMenu 
   exportBtn.addEventListener('click', () => exportCb?.())
 
   const hint = document.createElement('div')
-  hint.textContent = 'Press ` to toggle'
+  hint.textContent = 'Press ` for dev menu, ? for help'
   Object.assign(hint.style, {
     marginTop: '8px',
     fontSize: '10px',
@@ -287,13 +283,19 @@ export function mountDevMenu(container: HTMLElement, flags: FlagStore): DevMenu 
   return { root, toggle, show, hide, setFps, setRunId, isOpen, onExportMidi(cb: () => void) { exportCb = cb } }
 }
 
-export function attachDevMenuHotkey(menu: DevMenu, key = '`'): () => void {
+export function attachMenuHotkeys(devMenu: DevMenu, helpMenu: HelpMenu): () => void {
   function onKey(e: KeyboardEvent) {
-    if (e.key === key) {
+    if (e.key === '`') {
       e.preventDefault()
-      menu.toggle()
+      if (helpMenu.isOpen()) helpMenu.hide()
+      devMenu.toggle()
+    } else if (e.key === '?') {
+      e.preventDefault()
+      if (devMenu.isOpen()) devMenu.hide()
+      helpMenu.toggle()
     }
   }
   window.addEventListener('keydown', onKey)
   return () => window.removeEventListener('keydown', onKey)
 }
+
