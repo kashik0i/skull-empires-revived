@@ -47,6 +47,10 @@ export function resolveHeroActions(state: World): Action[] {
     if (!target || !target.alive) {
       return [{ type: 'SetHeroIntent', intent: null }]
     }
+    // Already adjacent — swing instead of trying to step onto the target's tile.
+    if (manhattan(hero.pos, target.pos) === 1) {
+      return [{ type: 'AttackActor', attackerId: hero.id, targetId: target.id }]
+    }
     // No caching: target moves, path may change each turn.
     const path = fullPathToward(state, hero.pos, target.pos, { passThroughActors: [target.id, ...npcIds(state)] })
     if (!path || path.length === 0) {
