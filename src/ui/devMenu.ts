@@ -297,3 +297,22 @@ export function attachDevMenuHotkey(menu: DevMenu, key = '`'): () => void {
   window.addEventListener('keydown', onKey)
   return () => window.removeEventListener('keydown', onKey)
 }
+
+export function mountDevMenuButton(parent: HTMLElement, devMenu: DevMenu): void {
+  const btn = document.createElement('button')
+  btn.type = 'button'
+  btn.textContent = 'Dev menu'
+  btn.title = 'Toggle dev menu (`)'
+  Object.assign(btn.style, {
+    background: '#2a1a3e',
+    color: '#eadbc0',
+    border: '1px solid #5a3e8a',
+    borderRadius: '4px',
+    padding: '6px 8px',
+    fontSize: '12px',
+    cursor: 'pointer',
+    width: '100%',
+  } satisfies Partial<CSSStyleDeclaration>)
+  btn.addEventListener('click', () => devMenu.toggle())
+  parent.appendChild(btn)
+}
