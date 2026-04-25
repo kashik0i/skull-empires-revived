@@ -5,7 +5,7 @@ type DrawerState = 'expanded' | 'collapsed'
 
 export type SidePanel = {
   root: HTMLElement
-  slot(name: 'minimap' | 'stats' | 'equipment' | 'inventory' | 'zoom' | 'music' | 'menu' | 'descend' | 'dev'): HTMLElement
+  slot(name: 'minimap' | 'stats' | 'equipment' | 'inventory' | 'zoom' | 'music' | 'menu' | 'descend'): HTMLElement
 }
 
 export function mountSidePanel(parent: HTMLElement, responsive?: Responsive): SidePanel {
@@ -36,7 +36,7 @@ export function mountSidePanel(parent: HTMLElement, responsive?: Responsive): Si
   parent.appendChild(body)
 
   const slots: Record<string, HTMLElement> = {}
-  const order = ['minimap', 'stats', 'equipment', 'inventory', 'zoom', 'music', 'menu', 'descend', 'dev'] as const
+  const order = ['minimap', 'stats', 'equipment', 'inventory', 'zoom', 'music', 'menu', 'descend'] as const
   for (const name of order) {
     const el = document.createElement('div')
     el.dataset.slot = name

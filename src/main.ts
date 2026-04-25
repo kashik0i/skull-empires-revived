@@ -16,7 +16,7 @@ import { createSfx } from './audio/sfx'
 import { wireAudio } from './audio/subscribe'
 import { createMusic } from './audio/music'
 import { createFlags } from './dev/flags'
-import { mountDevMenu, attachMenuHotkeys, mountDevMenuButton } from './ui/devMenu'
+import { mountDevMenu, attachMenuHotkeys } from './ui/devMenu'
 import { mountHelpMenu } from './ui/helpMenu'
 import { encodeMidi, downloadMidi } from './audio/midiExport'
 import { createDbClient } from './persistence/db/client'
@@ -214,7 +214,6 @@ async function main(): Promise<void> {
   devMenu.setRunId(runId)
   const helpMenu = mountHelpMenu(panel.slot('menu'))
   attachMenuHotkeys(devMenu, helpMenu)
-  mountDevMenuButton(panel.slot('dev'), devMenu, helpMenu)
 
   devMenu.onExportMidi(() => {
     const cap = music.getCapture()
