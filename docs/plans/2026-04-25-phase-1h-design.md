@@ -166,23 +166,34 @@ Pure data change:
 
 ### Armor sprites
 
-The only genuinely new asset:
+The only genuinely new asset, sourced from a downloadable CC0 pack
+(no hand-drawing, no AI-generated art):
 
-- New file `public/sprites/armor.png`, 48×16, three frames laid out
-  horizontally. Hand-drawn or AI-generated in the 0x72 palette,
-  released CC0 with a one-line `public/sprites/ATTRIBUTION.txt`
-  addition crediting the author of the new icons.
+- **Source pack:** [DawnLike](https://opengameart.org/content/dawnlike-16x16-universal-rogue-like-tileset-v181)
+  by DragonDePlatino — 16×16, public domain, fantasy roguelike
+  tileset with extensive armor variety. Style pairs reasonably with
+  0x72 (both are 16×16 chunky pixel-art with dark outlines). Backup
+  pick if DawnLike doesn't fit: Kenney's
+  [Tiny Dungeon](https://kenney.nl/assets/tiny-dungeon) — CC0,
+  cleaner style, also viable.
 
-  Three frames, left to right: cloth tunic, leather vest, plate
-  cuirass. Style cues: 16×16 silhouette, 1px outline in
-  `palette.obsidianBlack`, body fill in three different palette
-  tones to read at-a-glance.
+- **Extraction step (one-time, executed during 1H implementation):**
+  Pull three armor body sprites from the pack — one cloth-tier, one
+  leather-tier, one plate-tier — and pack them horizontally into a
+  single new file `public/sprites/armor.png` at 48×16 (three 16×16
+  frames). Picking from a single pack keeps the visual style
+  consistent across the three tiers.
+
+- **Attribution:** add a line to
+  `public/sprites/ATLAS_ATTRIBUTION.txt` crediting the source pack
+  (DawnLike is public domain so it's a courtesy, not a requirement;
+  Kenney is CC0 with optional credit).
 
 - New loader `loadArmorAtlas()` in `sprites.ts`, mirroring
-  `loadAtlas`. The two atlases are independent images; `getFrame` and
-  `drawSprite` accept an atlas argument or pick the right one based on
-  the frame name's prefix (`armor_*` → armor atlas, anything else →
-  dungeon atlas).
+  `loadAtlas`. The two atlases are independent images; `getFrame`
+  and `drawSprite` accept an atlas argument or pick the right one
+  based on the frame name's prefix (`armor_*` → armor atlas,
+  anything else → dungeon atlas).
 
 - Replace the current "skull placeholder" entries for `armor_cloth` /
   `armor_leather` / `armor_plate` with frames pointing into the new
@@ -190,7 +201,8 @@ The only genuinely new asset:
 
 - Fallback path: if `armor.png` 404s in dev, the sprite drawer logs
   once and renders the existing skull frame instead. No crash, no
-  blocked boot.
+  blocked boot — implementation can begin before the asset file
+  lands, and tests don't depend on it.
 
 ### Build display in HUD
 
