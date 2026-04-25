@@ -44,6 +44,48 @@ export function generateFloor(
     spawns = roomCenters.filter((_, i) => i !== stairsRoomIndex)
   }
 
+  // Door pass: place 1-2 closed doors at corridor↔room boundaries.
+  function inAnyRoom(x: number, y: number): boolean {
+    for (const r of bsp.rooms) {
+      if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) return true
+    }
+    return false
+  }
+  const doorCandidates: Pos[] = []
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      if (tiles[y * width + x] !== Tile.Floor) continue
+      if (inAnyRoom(x, y)) continue              // skip room interiors
+      const left  = tiles[y * width + (x - 1)] === Tile.Floor
+      const right = tiles[y * width + (x + 1)] === Tile.Floor
+      const up    = tiles[(y - 1) * width + x] === Tile.Floor
+      const down  = tiles[(y + 1) * width + x] === Tile.Floor
+      const horiz = left && right && !up && !down
+      const vert  = up && down && !left && !right
+      if (!horiz && !vert) continue
+      // At least one neighbor must be inside a room (we're at the boundary).
+      const hasRoomNeighbor =
+        (left && inAnyRoom(x - 1, y)) ||
+        (right && inAnyRoom(x + 1, y)) ||
+        (up && inAnyRoom(x, y - 1)) ||
+        (down && inAnyRoom(x, y + 1))
+      if (hasRoomNeighbor) doorCandidates.push({ x, y })
+    }
+  }
+  if (doorCandidates.length > 0) {
+    const targetCount = doorCandidates.length === 1 ? 1 : 2
+    const picked = new Set<number>()
+    while (picked.size < Math.min(targetCount, doorCandidates.length)) {
+      const r = nextU32(rng)
+      rng = r.state
+      const idx = r.value % doorCandidates.length
+      if (picked.has(idx)) continue
+      picked.add(idx)
+      const p = doorCandidates[idx]
+      tiles[p.y * width + p.x] = Tile.DoorClosed
+    }
+  }
+
   // Pick a random floor tile (not a spawn, not stairs) for scroll placement.
   let scrollPos: Pos | null = null
   const candidates: Pos[] = []
