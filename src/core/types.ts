@@ -8,6 +8,10 @@ export const Tile = {
   Wall: 2,
   Stairs: 3,
   Shrine: 4,
+  DoorClosed: 5,
+  DoorOpen: 6,
+  Chest: 7,
+  ChestOpen: 8,
 } as const
 export type TileKind = (typeof Tile)[keyof typeof Tile]
 
