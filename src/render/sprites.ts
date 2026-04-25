@@ -52,6 +52,33 @@ const FRAMES: Record<string, SpriteFrame> = {
   wall_top:       { x: 32,  y: 0,   w: 16, h: 16, frames: 1 },
   wall_mid:       { x: 32,  y: 16,  w: 16, h: 16, frames: 1 },
 
+  // Wall variants (autotile)
+  wall_corner_top_left:     { x: 16,  y: 16,  w: 16, h: 16, frames: 1 },
+  wall_corner_top_right:    { x: 48,  y: 16,  w: 16, h: 16, frames: 1 },
+  wall_corner_bottom_left:  { x: 16,  y: 48,  w: 16, h: 16, frames: 1 },
+  wall_corner_bottom_right: { x: 48,  y: 48,  w: 16, h: 16, frames: 1 },
+  wall_side_mid_left:       { x: 16,  y: 32,  w: 16, h: 16, frames: 1 },
+  wall_side_mid_right:      { x: 48,  y: 32,  w: 16, h: 16, frames: 1 },
+  wall_top_mid:             { x: 32,  y: 0,   w: 16, h: 16, frames: 1 },
+  column_top:               { x: 96,  y: 16,  w: 16, h: 16, frames: 1 },
+  column_mid:               { x: 96,  y: 32,  w: 16, h: 16, frames: 1 },
+
+  // Doors
+  door_closed:              { x: 16,  y: 224, w: 16, h: 16, frames: 1 },
+  door_open:                { x: 32,  y: 224, w: 16, h: 16, frames: 1 },
+
+  // Chests
+  chest_closed:             { x: 304, y: 288, w: 16, h: 16, frames: 1 },
+  chest_open:               { x: 336, y: 288, w: 16, h: 16, frames: 1 },
+
+  // Decor
+  wall_banner_red:          { x: 16,  y: 96,  w: 16, h: 16, frames: 1 },
+  wall_banner_blue:         { x: 32,  y: 96,  w: 16, h: 16, frames: 1 },
+  wall_banner_green:        { x: 48,  y: 96,  w: 16, h: 16, frames: 1 },
+  wall_banner_yellow:       { x: 64,  y: 96,  w: 16, h: 16, frames: 1 },
+  crate:                    { x: 288, y: 256, w: 16, h: 16, frames: 1 },
+  skull:                    { x: 288, y: 320, w: 16, h: 16, frames: 1 },
+
   // Items (consumable flasks) — 16×16
   flask_red:      { x: 288, y: 240, w: 16, h: 16, frames: 1 },
   flask_big_red:  { x: 288, y: 224, w: 16, h: 16, frames: 1 },
@@ -62,6 +89,11 @@ const FRAMES: Record<string, SpriteFrame> = {
   weapon_rusty_sword:    { x: 307, y: 26, w: 10, h: 21, frames: 1 },
   weapon_regular_sword:  { x: 323, y: 26, w: 10, h: 21, frames: 1 },
   weapon_red_gem_sword:  { x: 339, y: 26, w: 10, h: 21, frames: 1 },
+  weapon_knight_sword:   { x: 355, y: 26, w: 10, h: 21, frames: 1 },
+  weapon_duel_sword:     { x: 371, y: 26, w: 10, h: 21, frames: 1 },
+  weapon_anime_sword:    { x: 387, y: 26, w: 10, h: 21, frames: 1 },
+  weapon_golden_sword:   { x: 403, y: 26, w: 10, h: 21, frames: 1 },
+  weapon_lavish_sword:   { x: 419, y: 26, w: 10, h: 21, frames: 1 },
 
   // Armor — 0x72 has no armor sprites; using skull as placeholder
   armor_cloth:    { x: 288, y: 320, w: 16, h: 16, frames: 1 },
