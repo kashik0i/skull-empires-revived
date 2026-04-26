@@ -107,6 +107,27 @@ describe('floor: doors', () => {
   })
 })
 
+describe('floor: decor', () => {
+  it('attaches a decor array (possibly empty) to the floor', () => {
+    const { floor } = generateFloor(createRng('decor-1'), 40, 30)
+    expect(Array.isArray(floor.decor)).toBe(true)
+  })
+
+  it('decor positions are on Floor tiles, not on stairs/shrine/chest/door', () => {
+    const { floor } = generateFloor(createRng('decor-2'), 40, 30)
+    for (const d of floor.decor ?? []) {
+      const t = floor.tiles[d.y * floor.width + d.x]
+      expect(t).toBe(Tile.Floor)
+    }
+  })
+
+  it('decor placement is deterministic for a fixed seed', () => {
+    const a = generateFloor(createRng('decor-3'), 40, 30).floor.decor ?? []
+    const b = generateFloor(createRng('decor-3'), 40, 30).floor.decor ?? []
+    expect(a).toEqual(b)
+  })
+})
+
 describe('floor: chest', () => {
   it('places at most one closed chest per floor', () => {
     const { floor } = generateFloor(createRng('chest-1'), 40, 30)

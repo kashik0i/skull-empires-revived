@@ -70,11 +70,14 @@ export type Actor = {
   statusEffects: StatusEffect[]
 }
 
+export type FloorDecor = { x: number; y: number; sprite: string }
+
 export type Floor = {
   width: number
   height: number
   tiles: Uint8Array
   spawns: Pos[]
+  decor?: FloorDecor[]
 }
 
 export type Phase = 'exploring' | 'run_won' | 'run_lost'
