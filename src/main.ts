@@ -23,7 +23,7 @@ import { createDbClient } from './persistence/db/client'
 import { resolveInitialRun } from './persistence/autoResume'
 import type { CameraOffset } from './render/camera'
 import { appendDevLog, resetDevLog, logDevEvent, setRunId, setStreamingEnabled } from './dev/runLog'
-import { loadAtlas } from './render/sprites'
+import { loadAtlas, loadArmorAtlas } from './render/sprites'
 import { computeVisible } from './render/fov'
 import { mountMinimap } from './ui/minimap'
 import { mountDialog } from './ui/dialog'
@@ -128,6 +128,7 @@ async function main(): Promise<void> {
 
   // Fire-and-forget — renderer falls back to procedural shapes until this resolves.
   void loadAtlas().catch(err => console.warn('[sprites] atlas failed to load', err))
+  void loadArmorAtlas().catch(() => {})
 
   const params = new URLSearchParams(window.location.search)
   const runParam = params.get('run')

@@ -95,10 +95,10 @@ const FRAMES: Record<string, SpriteFrame> = {
   weapon_golden_sword:   { x: 403, y: 26, w: 10, h: 21, frames: 1 },
   weapon_lavish_sword:   { x: 419, y: 26, w: 10, h: 21, frames: 1 },
 
-  // Armor — 0x72 has no armor sprites; using skull as placeholder
-  armor_cloth:    { x: 288, y: 320, w: 16, h: 16, frames: 1 },
-  armor_leather:  { x: 288, y: 320, w: 16, h: 16, frames: 1 },
-  armor_plate:    { x: 288, y: 320, w: 16, h: 16, frames: 1 },
+  // Armor — sourced from public/sprites/armor.png (48x16, 3 frames)
+  armor_cloth:    { x: 0,  y: 0, w: 16, h: 16, frames: 1 },
+  armor_leather:  { x: 16, y: 0, w: 16, h: 16, frames: 1 },
+  armor_plate:    { x: 32, y: 0, w: 16, h: 16, frames: 1 },
 
   // Lore scroll pickup — 16×16 (uses flask_green as fallback)
   scroll:         { x: 320, y: 240, w: 16, h: 16, frames: 1 },
@@ -133,6 +133,29 @@ export function isAtlasReady(): boolean {
   return atlas !== null
 }
 
+let armorAtlas: HTMLImageElement | null = null
+let armorPromise: Promise<HTMLImageElement | null> | null = null
+
+export function loadArmorAtlas(src = '/sprites/armor.png'): Promise<HTMLImageElement | null> {
+  if (armorAtlas) return Promise.resolve(armorAtlas)
+  if (armorPromise) return armorPromise
+  armorPromise = new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => { armorAtlas = img; resolve(img) }
+    img.onerror = () => {
+      console.warn('[sprites] armor.png missing — falling back to skull placeholder')
+      resolve(null)
+    }
+    img.src = src
+  })
+  return armorPromise
+}
+
+function atlasForFrame(name: string): HTMLImageElement | null {
+  if (name.startsWith('armor_') && armorAtlas) return armorAtlas
+  return atlas
+}
+
 export function getFrame(name: string): SpriteFrame | null {
   return FRAMES[name] ?? null
 }
@@ -158,7 +181,14 @@ export function drawSprite(
   nowMs?: number,
   flipX = false,
 ): boolean {
-  if (!atlas) return false
+  const img = atlasForFrame(name)
+  if (!img) {
+    // Armor fallback path: re-route to skull frame on the dungeon atlas.
+    if (name.startsWith('armor_') && atlas) {
+      return drawSprite(ctx, 'skull', cx, cy, tileSize, nowMs, flipX)
+    }
+    return false
+  }
   const f = FRAMES[name]
   if (!f) return false
   const frame = currentFrameIndex(f.frames, nowMs)
@@ -173,10 +203,10 @@ export function drawSprite(
     ctx.translate(cx, 0)
     ctx.scale(-1, 1)
     ctx.translate(-cx, 0)
-    ctx.drawImage(atlas, sx, f.y, f.w, f.h, dx, dy, dw, dh)
+    ctx.drawImage(img, sx, f.y, f.w, f.h, dx, dy, dw, dh)
     ctx.restore()
   } else {
-    ctx.drawImage(atlas, sx, f.y, f.w, f.h, dx, dy, dw, dh)
+    ctx.drawImage(img, sx, f.y, f.w, f.h, dx, dy, dw, dh)
   }
   return true
 }
@@ -189,9 +219,16 @@ export function drawTileSprite(
   tileY: number,
   tileSize: number,
 ): boolean {
-  if (!atlas) return false
+  const img = atlasForFrame(name)
+  if (!img) {
+    // Armor fallback path: re-route to skull frame on the dungeon atlas.
+    if (name.startsWith('armor_') && atlas) {
+      return drawTileSprite(ctx, 'skull', tileX, tileY, tileSize)
+    }
+    return false
+  }
   const f = FRAMES[name]
   if (!f) return false
-  ctx.drawImage(atlas, f.x, f.y, f.w, f.h, tileX * tileSize, tileY * tileSize, tileSize, tileSize)
+  ctx.drawImage(img, f.x, f.y, f.w, f.h, tileX * tileSize, tileY * tileSize, tileSize, tileSize)
   return true
 }
