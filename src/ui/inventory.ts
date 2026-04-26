@@ -1,14 +1,34 @@
 import type { World, Action, Item } from '../core/types'
+import { drawSprite } from '../render/sprites'
 
 export type InventoryMount = {
   root: HTMLElement
   update(state: World): void
 }
 
+function makeEquipmentIcon(spriteName: string | null): HTMLCanvasElement {
+  const canvas = document.createElement('canvas')
+  canvas.width = 32
+  canvas.height = 32
+  canvas.style.imageRendering = 'pixelated'
+  canvas.style.flexShrink = '0'
+  const ctx = canvas.getContext('2d')
+  if (ctx && spriteName) {
+    ctx.imageSmoothingEnabled = false
+    drawSprite(ctx, spriteName, 16, 16, 32)
+  } else if (ctx) {
+    // Empty-slot placeholder: faded outline.
+    ctx.strokeStyle = 'rgba(234, 219, 192, 0.3)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(4, 4, 24, 24)
+  }
+  return canvas
+}
+
 export function mountInventory(equipSlot: HTMLElement, invSlot: HTMLElement, onAction: (a: Action) => void): InventoryMount {
-  // Equipment row (2 slots side by side)
+  // Equipment rows (weapon + armor, each as a flex row with icon + label)
   const equipRow = document.createElement('div')
-  Object.assign(equipRow.style, { display: 'flex', gap: '6px', justifyContent: 'center' } satisfies Partial<CSSStyleDeclaration>)
+  Object.assign(equipRow.style, { display: 'flex', flexDirection: 'column', gap: '6px' } satisfies Partial<CSSStyleDeclaration>)
   equipSlot.appendChild(equipRow)
 
   // Inventory grid (2 rows × 3 cols)
@@ -22,7 +42,9 @@ export function mountInventory(equipSlot: HTMLElement, invSlot: HTMLElement, onA
 
   let lastKey = ''
 
-  function makeSlot(label: string): { el: HTMLDivElement; setItem(item: Item | null): void; onClick(cb: () => void): void } {
+  type SlotHandle = { el: HTMLDivElement; setItem(item: Item | null): void; onClick(cb: () => void): void }
+
+  function makeSlot(label: string): SlotHandle {
     const el = document.createElement('div')
     Object.assign(el.style, {
       width: '52px', height: '52px',
@@ -48,8 +70,60 @@ export function mountInventory(equipSlot: HTMLElement, invSlot: HTMLElement, onA
     }
   }
 
-  const weaponSlot = makeSlot('weapon')
-  const armorSlot = makeSlot('armor')
+  function makeEquipmentRow(slotLabel: string): SlotHandle {
+    const el = document.createElement('div')
+    Object.assign(el.style, {
+      display: 'flex', alignItems: 'center', gap: '8px',
+      border: '1px solid #5a3e8a',
+      borderRadius: '6px',
+      background: 'rgba(11, 6, 18, 0.78)',
+      padding: '4px 6px',
+      cursor: 'pointer',
+      minHeight: '40px',
+    } satisfies Partial<CSSStyleDeclaration>)
+
+    let iconCanvas = makeEquipmentIcon(null)
+    el.appendChild(iconCanvas)
+
+    const label = document.createElement('span')
+    Object.assign(label.style, {
+      fontFamily: 'ui-monospace, monospace',
+      fontSize: '10px',
+      color: '#c9b3e8',
+    } satisfies Partial<CSSStyleDeclaration>)
+    label.textContent = '— empty —'
+    el.appendChild(label)
+
+    let onClickCb: (() => void) | null = null
+    el.addEventListener('mousedown', e => { e.preventDefault(); onClickCb?.() })
+
+    return {
+      el,
+      setItem(item) {
+        el.title = item ? item.name : `(${slotLabel})`
+
+        // Replace icon canvas with fresh draw
+        const newIcon = makeEquipmentIcon(item ? item.sprite : null)
+        el.replaceChild(newIcon, iconCanvas)
+        iconCanvas = newIcon
+
+        if (item) {
+          const stat = item.body.kind === 'weapon'
+            ? `+${item.body.atk} atk`
+            : item.body.kind === 'armor'
+              ? `+${item.body.def} def`
+              : ''
+          label.textContent = `${item.name}${stat ? ` (${stat})` : ''}`
+        } else {
+          label.textContent = '— empty —'
+        }
+      },
+      onClick(cb) { onClickCb = cb },
+    }
+  }
+
+  const weaponSlot = makeEquipmentRow('weapon')
+  const armorSlot = makeEquipmentRow('armor')
   equipRow.appendChild(weaponSlot.el)
   equipRow.appendChild(armorSlot.el)
 
