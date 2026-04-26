@@ -2,8 +2,8 @@ import { describe, it, expect } from 'bun:test'
 import { getItemDef, listItemIds, instantiateItem, itemPoolForDepth } from '../../src/content/itemLoader'
 
 describe('itemLoader', () => {
-  it('lists exactly 10 items', () => {
-    expect(listItemIds().length).toBe(10)
+  it('lists exactly 15 items', () => {
+    expect(listItemIds().length).toBe(15)
   })
 
   it('throws on unknown id', () => {
@@ -19,7 +19,7 @@ describe('itemLoader', () => {
 
   it('depth pool grows with depth', () => {
     expect(itemPoolForDepth(1).length).toBe(3)
-    expect(itemPoolForDepth(3).length).toBe(7)
-    expect(itemPoolForDepth(5).length).toBe(10)
+    expect(itemPoolForDepth(3).length).toBe(9)
+    expect(itemPoolForDepth(5).length).toBe(15)
   })
 })

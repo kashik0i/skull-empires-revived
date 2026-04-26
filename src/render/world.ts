@@ -5,6 +5,7 @@ import { palette } from '../content/palette'
 import { drawShape } from './shape'
 import { drawSprite, drawTileSprite, itemSpriteName, isAtlasReady } from './sprites'
 import { computeVisible } from './fov'
+import { wallVariantForMask, NEIGHBOR_N, NEIGHBOR_E, NEIGHBOR_S, NEIGHBOR_W } from './wallAutotile'
 import type { DisplayState } from './display'
 
 /**
@@ -13,6 +14,15 @@ import type { DisplayState } from './display'
  */
 function tileVariantHash(x: number, y: number, n: number): number {
   return ((x * 73 + y * 37) >>> 0) % n
+}
+
+function wallMaskAt(tiles: Uint8Array, w: number, h: number, x: number, y: number): number {
+  let m = 0
+  if (y === 0     || tiles[(y - 1) * w + x] === Tile.Wall) m |= NEIGHBOR_N
+  if (x === w - 1 || tiles[y * w + (x + 1)] === Tile.Wall) m |= NEIGHBOR_E
+  if (y === h - 1 || tiles[(y + 1) * w + x] === Tile.Wall) m |= NEIGHBOR_S
+  if (x === 0     || tiles[y * w + (x - 1)] === Tile.Wall) m |= NEIGHBOR_W
+  return m
 }
 
 export type RenderOptions = {
@@ -82,13 +92,47 @@ export function renderWorld(
         }
       } else if (t === Tile.Wall) {
         if (atlasReady) {
-          // Always use the wall body sprite — `wall_top_mid` in 0x72 is designed
-          // to overhang from the row above as a 3D cap, so it renders mostly
-          // transparent in its own tile box and looks like a thin strip. The
-          // body sprite gives a clean flat top-down brick wall.
-          drawTileSprite(ctx, 'wall_mid', x, y, tileSize)
+          const mask = wallMaskAt(floor.tiles, floor.width, floor.height, x, y)
+          const wallSprite = wallVariantForMask(mask)
+          drawTileSprite(ctx, wallSprite, x, y, tileSize)
         } else {
-          ctx.fillStyle = palette.deepPurple
+          ctx.fillStyle = palette.deepPurpleDark
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize)
+        }
+      } else if (t === Tile.DoorClosed) {
+        if (atlasReady) {
+          drawTileSprite(ctx, 'floor_1', x, y, tileSize)
+          drawTileSprite(ctx, 'door_closed', x, y, tileSize)
+        } else {
+          ctx.fillStyle = palette.deepPurpleLite
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize)
+          ctx.fillStyle = palette.boneWhite
+          ctx.fillRect(x * tileSize + 4, y * tileSize + 4, tileSize - 8, tileSize - 8)
+        }
+      } else if (t === Tile.DoorOpen) {
+        if (atlasReady) {
+          drawTileSprite(ctx, 'floor_1', x, y, tileSize)
+          drawTileSprite(ctx, 'door_open', x, y, tileSize)
+        } else {
+          ctx.fillStyle = palette.deepPurpleLite
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize)
+        }
+      } else if (t === Tile.Chest) {
+        if (atlasReady) {
+          drawTileSprite(ctx, 'floor_1', x, y, tileSize)
+          drawTileSprite(ctx, 'chest_closed', x, y, tileSize)
+        } else {
+          ctx.fillStyle = palette.deepPurpleLite
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize)
+          ctx.fillStyle = palette.bloodCrimson
+          ctx.fillRect(x * tileSize + 6, y * tileSize + 8, tileSize - 12, tileSize - 16)
+        }
+      } else if (t === Tile.ChestOpen) {
+        if (atlasReady) {
+          drawTileSprite(ctx, 'floor_1', x, y, tileSize)
+          drawTileSprite(ctx, 'chest_open', x, y, tileSize)
+        } else {
+          ctx.fillStyle = palette.deepPurpleLite
           ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize)
         }
       } else if (t === Tile.Stairs) {
@@ -137,6 +181,18 @@ export function renderWorld(
     }
   }
   ctx.globalAlpha = 1
+
+  // Decor pass — between floor and actors. Visibility tracks host tile.
+  if (atlasReady && floor.decor && floor.decor.length > 0) {
+    for (const d of floor.decor) {
+      const idx = d.y * floor.width + d.x
+      const vis = tileVisState(idx)
+      if (vis === 'unknown') continue
+      ctx.globalAlpha = vis === 'seen' ? 0.35 : 1
+      drawTileSprite(ctx, d.sprite, d.x, d.y, tileSize)
+    }
+    ctx.globalAlpha = 1
+  }
 
   function posVisible(x: number, y: number): boolean {
     if (!visible) return true

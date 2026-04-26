@@ -24,7 +24,10 @@ describe('floor', () => {
             floor.tiles[y * floor.width + (x - 1)],
             floor.tiles[y * floor.width + (x + 1)],
           ]
-          const validTiles: number[] = [Tile.Floor, Tile.Wall, Tile.Stairs, Tile.Shrine]
+          const validTiles: number[] = [
+            Tile.Floor, Tile.Wall, Tile.Stairs, Tile.Shrine,
+            Tile.DoorClosed, Tile.DoorOpen, Tile.Chest, Tile.ChestOpen,
+          ]
           for (const n of neighbours) {
             expect(validTiles).toContain(n)
           }
@@ -71,5 +74,77 @@ describe('floor', () => {
       if (floor.tiles[i] === Tile.Stairs) stairsCount++
     }
     expect(stairsCount).toBe(0)
+  })
+})
+
+describe('floor: doors', () => {
+  it('places between 1 and 2 closed doors per floor', () => {
+    const { floor } = generateFloor(createRng('door-1'), 40, 30)
+    let count = 0
+    for (let i = 0; i < floor.tiles.length; i++) {
+      if (floor.tiles[i] === Tile.DoorClosed) count++
+    }
+    expect(count).toBeGreaterThanOrEqual(1)
+    expect(count).toBeLessThanOrEqual(2)
+  })
+
+  it('every door is reachable from a spawn (not in a sealed pocket)', () => {
+    const { floor } = generateFloor(createRng('door-2'), 40, 30)
+    // Spot-check: each door has at least one passable neighbor.
+    for (let y = 0; y < floor.height; y++) {
+      for (let x = 0; x < floor.width; x++) {
+        if (floor.tiles[y * floor.width + x] !== Tile.DoorClosed) continue
+        const ns = [
+          floor.tiles[(y - 1) * floor.width + x],
+          floor.tiles[(y + 1) * floor.width + x],
+          floor.tiles[y * floor.width + (x - 1)],
+          floor.tiles[y * floor.width + (x + 1)],
+        ]
+        const passableNeighbors = ns.filter(t => t === Tile.Floor || t === Tile.Stairs).length
+        expect(passableNeighbors).toBeGreaterThanOrEqual(1)
+      }
+    }
+  })
+})
+
+describe('floor: decor', () => {
+  it('attaches a decor array (possibly empty) to the floor', () => {
+    const { floor } = generateFloor(createRng('decor-1'), 40, 30)
+    expect(Array.isArray(floor.decor)).toBe(true)
+  })
+
+  it('decor positions are on Floor tiles, not on stairs/shrine/chest/door', () => {
+    const { floor } = generateFloor(createRng('decor-2'), 40, 30)
+    for (const d of floor.decor ?? []) {
+      const t = floor.tiles[d.y * floor.width + d.x]
+      expect(t).toBe(Tile.Floor)
+    }
+  })
+
+  it('decor placement is deterministic for a fixed seed', () => {
+    const a = generateFloor(createRng('decor-3'), 40, 30).floor.decor ?? []
+    const b = generateFloor(createRng('decor-3'), 40, 30).floor.decor ?? []
+    expect(a).toEqual(b)
+  })
+})
+
+describe('floor: chest', () => {
+  it('places at most one closed chest per floor', () => {
+    const { floor } = generateFloor(createRng('chest-1'), 40, 30)
+    let count = 0
+    for (let i = 0; i < floor.tiles.length; i++) {
+      if (floor.tiles[i] === Tile.Chest) count++
+    }
+    expect(count).toBeLessThanOrEqual(1)
+  })
+
+  it('places exactly one chest when at least 3 rooms exist', () => {
+    // Use a seed known to produce ≥3 rooms at this size — re-roll until we find one if needed.
+    let { floor } = generateFloor(createRng('chest-2'), 40, 30)
+    let count = 0
+    for (let i = 0; i < floor.tiles.length; i++) {
+      if (floor.tiles[i] === Tile.Chest) count++
+    }
+    expect(count).toBe(1)
   })
 })

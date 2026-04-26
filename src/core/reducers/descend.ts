@@ -1,6 +1,7 @@
 import type { World, LoreScroll } from '../types'
-import { Tile } from '../types'
+import { Tile, type TileKind } from '../types'
 import type { Floor, Pos } from '../types'
+import { isPassable } from '../tile'
 import { generateFloor } from '../../procgen/floor'
 import { generateBossFloor } from '../../procgen/boss'
 import { spawnEnemiesOnFloor, spawnBossEncounter, compositionForDepth, spawnMerchant } from '../state'
@@ -87,5 +88,5 @@ export function descend(world: World): World {
 function isFloorOrStairsTile(floor: Floor, p: Pos): boolean {
   if (p.x < 0 || p.y < 0 || p.x >= floor.width || p.y >= floor.height) return false
   const t = floor.tiles[p.y * floor.width + p.x]
-  return t === Tile.Floor || t === Tile.Stairs || t === Tile.Shrine
+  return isPassable(t as TileKind)
 }

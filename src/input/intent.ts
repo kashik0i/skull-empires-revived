@@ -1,11 +1,13 @@
-import { Tile, type Action, type Pos, type World } from '../core/types'
+import { type Action, type Pos, type TileKind, type World } from '../core/types'
+import { isPathable } from '../core/tile'
 
 /**
  * Resolve a tile click into an intent-setting action.
  *   - Click on an alive actor (other than hero) → attack-intent on that actor.
- *   - Click on a walkable tile → move-intent to that tile.
+ *   - Click on a pathable tile (floor/stairs/shrine/doors/chests) → move-intent.
  *   - Click on an impassable tile (wall/void) → null.
- * Returns null if no meaningful intent can be set.
+ * Closed doors are pathable: the BFS routes through them and the move reducer
+ * handles the bump-to-open.
  */
 export function intentForClick(state: World, tile: Pos): Action | null {
   const hero = state.actors[state.heroId]
@@ -32,9 +34,9 @@ export function intentForClick(state: World, tile: Pos): Action | null {
     return { type: 'SetHeroIntent', intent: null }
   }
 
-  // Click on walkable floor (or stairs or shrine) → move intent
+  // Click on a pathable tile → move intent
   const t = floor.tiles[tile.y * floor.width + tile.x]
-  if (t === Tile.Floor || t === Tile.Stairs || t === Tile.Shrine) {
+  if (isPathable(t as TileKind)) {
     return { type: 'SetHeroIntent', intent: { kind: 'move-to', goal: tile } }
   }
 

@@ -1,4 +1,5 @@
-import { Tile, type Floor, type Pos } from '../core/types'
+import { type Floor, type Pos, type TileKind } from '../core/types'
+import { isOpaque } from '../core/tile'
 
 export const FOV_RADIUS = 7
 
@@ -75,7 +76,7 @@ function hasLineOfSight(
     // the loop in computeVisible when (x1,y1) hits that wall tile directly.
     if (x < 0 || y < 0 || x >= w || y >= h) return false
     if (x === x1 && y === y1) return true
-    const t = tiles[y * w + x]
-    if (t === Tile.Wall) return false
+    const t = tiles[y * w + x] as TileKind
+    if (isOpaque(t)) return false
   }
 }

@@ -108,6 +108,10 @@ export function mountMinimap(parent: HTMLElement): Minimap {
         else if (t === Tile.Wall) color = palette.deepPurple
         else if (t === Tile.Stairs) color = palette.silkFlameAmber
         else if (t === Tile.Shrine) color = palette.bloodCrimson
+        else if (t === Tile.DoorClosed) color = palette.silkFlameAmber
+        else if (t === Tile.DoorOpen) color = palette.ironGray
+        else if (t === Tile.Chest) color = palette.bloodCrimson
+        else if (t === Tile.ChestOpen) color = palette.ironGray
         if (color) {
           ctx.fillStyle = color
           ctx.fillRect((x - win.x0) * MINIMAP_SCALE, (y - win.y0) * MINIMAP_SCALE, MINIMAP_SCALE, MINIMAP_SCALE)

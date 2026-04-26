@@ -8,5 +8,10 @@
   { "id": "ember-blade", "name": "Ember Blade", "sprite": "weapon_red_gem_sword", "body": { "kind": "weapon", "atk": 3 } },
   { "id": "cloth-rags", "name": "Cloth Rags", "sprite": "armor_cloth", "body": { "kind": "armor", "def": 1 } },
   { "id": "leather-vest", "name": "Leather Vest", "sprite": "armor_leather", "body": { "kind": "armor", "def": 2 } },
-  { "id": "plate-mail", "name": "Plate Mail", "sprite": "armor_plate", "body": { "kind": "armor", "def": 3 } }
+  { "id": "plate-mail", "name": "Plate Mail", "sprite": "armor_plate", "body": { "kind": "armor", "def": 3 } },
+  { "id": "knight-blade", "name": "Knight's Blade", "sprite": "weapon_knight_sword", "body": { "kind": "weapon", "atk": 3 } },
+  { "id": "duel-blade", "name": "Duelist's Edge", "sprite": "weapon_duel_sword", "body": { "kind": "weapon", "atk": 3 } },
+  { "id": "flame-blade", "name": "Flame Edge", "sprite": "weapon_anime_sword", "body": { "kind": "weapon", "atk": 4 } },
+  { "id": "golden-blade", "name": "Golden Blade", "sprite": "weapon_golden_sword", "body": { "kind": "weapon", "atk": 4 } },
+  { "id": "royal-blade", "name": "Royal Sabre", "sprite": "weapon_lavish_sword", "body": { "kind": "weapon", "atk": 5 } }
 ]
