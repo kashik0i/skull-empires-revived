@@ -29,4 +29,16 @@ describe('move: doors', () => {
     const after = moveActor(s, { type: 'MoveActor', actorId: s.heroId, to: target })
     expect(after.actors[s.heroId].pos).toEqual(target)
   })
+
+  it("door bump produces a state change that counts as the actor's action", () => {
+    let s = createInitialWorld('door-turn-test')
+    const hero = s.actors[s.heroId]
+    const target = { x: hero.pos.x + 1, y: hero.pos.y }
+    s = withTile(s, target.x, target.y, Tile.DoorClosed)
+    const after = moveActor(s, { type: 'MoveActor', actorId: s.heroId, to: target })
+    // The new state must DIFFER from the input state (returning the same `state` would mean "no-op",
+    // which the loop interprets as no turn since apply() checks `if (after === before) return`).
+    expect(after).not.toBe(s)
+    expect(after.floor.tiles[target.y * after.floor.width + target.x]).toBe(Tile.DoorOpen)
+  })
 })
