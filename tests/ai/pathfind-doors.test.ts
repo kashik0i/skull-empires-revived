@@ -43,11 +43,12 @@ describe('pathfind: doors', () => {
     expect(path!.length).toBeGreaterThan(0)
   })
 
-  it('refuses to path through a closed door', () => {
+  it('paths through a closed door (BFS routes through; reducer handles bump)', () => {
     const w = emptyWorld(7, 1)
     w.floor.tiles[3] = Tile.DoorClosed
     const path = fullPathToward(w, { x: 0, y: 0 }, { x: 6, y: 0 })
-    expect(path).toBeNull()
+    expect(path).not.toBeNull()
+    expect(path!.some(p => p.x === 3)).toBe(true)
   })
 
   it('finds a path through a chest tile (treated as passable)', () => {
@@ -71,10 +72,10 @@ describe('pathfind: doors', () => {
     expect(step).toEqual({ x: 1, y: 0 })
   })
 
-  it('firstStepToward treats closed door as impassable', () => {
+  it('firstStepToward routes through a closed door', () => {
     const w = emptyWorld(5, 1)
     w.floor.tiles[2] = Tile.DoorClosed
     const step = firstStepToward(w, { x: 0, y: 0 }, { x: 4, y: 0 })
-    expect(step).toBeNull()
+    expect(step).toEqual({ x: 1, y: 0 })
   })
 })

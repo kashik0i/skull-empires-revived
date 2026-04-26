@@ -6,22 +6,27 @@ export type InventoryMount = {
   update(state: World): void
 }
 
-function makeEquipmentIcon(spriteName: string | null): HTMLCanvasElement {
+/** Paint a 32x32 sprite icon onto a canvas, or a faded outline if no sprite. */
+function paintIcon(canvas: HTMLCanvasElement, spriteName: string | null): void {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  if (spriteName) {
+    ctx.imageSmoothingEnabled = false
+    drawSprite(ctx, spriteName, 16, 16, 32)
+  } else {
+    ctx.strokeStyle = 'rgba(234, 219, 192, 0.3)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(4, 4, 24, 24)
+  }
+}
+
+function makeIconCanvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas')
   canvas.width = 32
   canvas.height = 32
   canvas.style.imageRendering = 'pixelated'
   canvas.style.flexShrink = '0'
-  const ctx = canvas.getContext('2d')
-  if (ctx && spriteName) {
-    ctx.imageSmoothingEnabled = false
-    drawSprite(ctx, spriteName, 16, 16, 32)
-  } else if (ctx) {
-    // Empty-slot placeholder: faded outline.
-    ctx.strokeStyle = 'rgba(234, 219, 192, 0.3)'
-    ctx.lineWidth = 1
-    ctx.strokeRect(4, 4, 24, 24)
-  }
   return canvas
 }
 
@@ -42,9 +47,15 @@ export function mountInventory(equipSlot: HTMLElement, invSlot: HTMLElement, onA
 
   let lastKey = ''
 
-  type SlotHandle = { el: HTMLDivElement; setItem(item: Item | null): void; onClick(cb: () => void): void }
+  type SlotHandle = {
+    el: HTMLDivElement
+    canvas: HTMLCanvasElement
+    sprite(): string | null
+    setItem(item: Item | null): void
+    onClick(cb: () => void): void
+  }
 
-  function makeSlot(label: string): SlotHandle {
+  function makeInventorySlot(label: string): SlotHandle {
     const el = document.createElement('div')
     Object.assign(el.style, {
       width: '52px', height: '52px',
@@ -52,19 +63,26 @@ export function mountInventory(equipSlot: HTMLElement, invSlot: HTMLElement, onA
       borderRadius: '6px',
       background: 'rgba(11, 6, 18, 0.78)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: 'ui-monospace, monospace', fontSize: '10px',
-      color: '#c9b3e8',
       cursor: 'pointer',
-      textAlign: 'center',
       padding: '2px',
     } satisfies Partial<CSSStyleDeclaration>)
+
+    const canvas = makeIconCanvas()
+    el.appendChild(canvas)
+    let currentSprite: string | null = null
+    paintIcon(canvas, null)
+
     let onClickCb: (() => void) | null = null
     el.addEventListener('mousedown', e => { e.preventDefault(); onClickCb?.() })
+
     return {
       el,
+      canvas,
+      sprite: () => currentSprite,
       setItem(item) {
         el.title = item ? item.name : `(${label})`
-        el.textContent = item ? item.name.slice(0, 6) : ''
+        currentSprite = item ? item.sprite : null
+        paintIcon(canvas, currentSprite)
       },
       onClick(cb) { onClickCb = cb },
     }
@@ -82,8 +100,10 @@ export function mountInventory(equipSlot: HTMLElement, invSlot: HTMLElement, onA
       minHeight: '40px',
     } satisfies Partial<CSSStyleDeclaration>)
 
-    let iconCanvas = makeEquipmentIcon(null)
-    el.appendChild(iconCanvas)
+    const canvas = makeIconCanvas()
+    el.appendChild(canvas)
+    let currentSprite: string | null = null
+    paintIcon(canvas, null)
 
     const label = document.createElement('span')
     Object.assign(label.style, {
@@ -99,13 +119,12 @@ export function mountInventory(equipSlot: HTMLElement, invSlot: HTMLElement, onA
 
     return {
       el,
+      canvas,
+      sprite: () => currentSprite,
       setItem(item) {
         el.title = item ? item.name : `(${slotLabel})`
-
-        // Replace icon canvas with fresh draw
-        const newIcon = makeEquipmentIcon(item ? item.sprite : null)
-        el.replaceChild(newIcon, iconCanvas)
-        iconCanvas = newIcon
+        currentSprite = item ? item.sprite : null
+        paintIcon(canvas, currentSprite)
 
         if (item) {
           const stat = item.body.kind === 'weapon'
@@ -127,8 +146,21 @@ export function mountInventory(equipSlot: HTMLElement, invSlot: HTMLElement, onA
   equipRow.appendChild(weaponSlot.el)
   equipRow.appendChild(armorSlot.el)
 
-  const invSlots = Array.from({ length: 6 }, () => makeSlot(''))
+  const invSlots = Array.from({ length: 6 }, () => makeInventorySlot(''))
   for (const s of invSlots) invGrid.appendChild(s.el)
+
+  // Per-frame redraw so multi-frame sprites animate AND single-frame items
+  // re-render the moment the atlas finishes loading (atlas may load after
+  // the first paint when no sprite is yet drawn). Cheap: 8 small canvases.
+  const allSlots: SlotHandle[] = [weaponSlot, armorSlot, ...invSlots]
+  function tick(): void {
+    for (const s of allSlots) {
+      const sp = s.sprite()
+      if (sp) paintIcon(s.canvas, sp)
+    }
+    requestAnimationFrame(tick)
+  }
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(tick)
 
   function update(state: World): void {
     const key = JSON.stringify({

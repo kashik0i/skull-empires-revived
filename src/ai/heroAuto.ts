@@ -1,5 +1,5 @@
 import { type Action, type ActorId, type Pos, type TileKind, type World } from '../core/types'
-import { isPassable } from '../core/tile'
+import { isPathable } from '../core/tile'
 import { firstStepToward, fullPathToward, manhattan } from './pathfind'
 
 /**
@@ -117,7 +117,7 @@ function isStepValid(state: World, step: Pos, heroId: ActorId): boolean {
   const { floor } = state
   if (step.x < 0 || step.y < 0 || step.x >= floor.width || step.y >= floor.height) return false
   const t = floor.tiles[step.y * floor.width + step.x]
-  if (!isPassable(t as TileKind)) return false
+  if (!isPathable(t as TileKind)) return false
   for (const id in state.actors) {
     if (id === heroId) continue
     const a = state.actors[id]

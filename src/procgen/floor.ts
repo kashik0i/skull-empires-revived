@@ -146,26 +146,31 @@ export function generateFloor(
     }
   }
 
-  // Decor pass: 0-3 props per room, banners on north walls only.
+  // Decor pass: 0-1 props per room. Banners on north walls; otherwise floor prop.
+  // De-duplicates per (x,y) so two rolls in the same tile don't stack.
   const DECOR_BANNERS = ['wall_banner_red', 'wall_banner_blue', 'wall_banner_green', 'wall_banner_yellow']
   const DECOR_FLOOR_PROPS = ['crate', 'skull', 'column_top']
   const decor: FloorDecor[] = []
+  const decorPlaced = new Set<number>()
   for (const room of bsp.rooms) {
     const propRoll = nextU32(rng)
     rng = propRoll.state
-    const propCount = propRoll.value % 4   // 0, 1, 2, or 3
+    const propCount = propRoll.value % 2   // 0 or 1 props per room
     for (let i = 0; i < propCount; i++) {
       const xRoll = nextU32(rng); rng = xRoll.state
       const yRoll = nextU32(rng); rng = yRoll.state
       const px = room.x + (xRoll.value % room.w)
       const py = room.y + (yRoll.value % room.h)
-      if (tiles[py * width + px] !== Tile.Floor) continue
+      const idx = py * width + px
+      if (tiles[idx] !== Tile.Floor) continue
+      if (decorPlaced.has(idx)) continue
       // Choose banner if there is a wall to the north, else a floor prop.
       const northIsWall = py > 0 && tiles[(py - 1) * width + px] === Tile.Wall
       const kindRoll = nextU32(rng); rng = kindRoll.state
       const sprite = northIsWall
         ? DECOR_BANNERS[kindRoll.value % DECOR_BANNERS.length]
         : DECOR_FLOOR_PROPS[kindRoll.value % DECOR_FLOOR_PROPS.length]
+      decorPlaced.add(idx)
       decor.push({ x: px, y: py, sprite })
     }
   }
