@@ -86,6 +86,34 @@ export function generateFloor(
     }
   }
 
+  // Chest pass: one per floor in a non-spawn, non-stairs room.
+  if (bsp.rooms.length >= 3) {
+    const stairsRoomIdx = hasStairs && bsp.rooms.length >= 2 ? bsp.rooms.length - 1 : -1
+    const eligibleRooms = bsp.rooms
+      .map((r, i) => ({ r, i }))
+      .filter(({ i }) => i !== stairsRoomIdx && i !== 0)  // 0 is hero-spawn room
+    if (eligibleRooms.length > 0) {
+      const r = nextU32(rng)
+      rng = r.state
+      const pick = eligibleRooms[r.value % eligibleRooms.length].r
+      // Collect all floor tiles in the chosen room that aren't spawn points.
+      const chestCandidates: Pos[] = []
+      for (let cy = pick.y; cy < pick.y + pick.h; cy++) {
+        for (let cx = pick.x; cx < pick.x + pick.w; cx++) {
+          if (tiles[cy * width + cx] !== Tile.Floor) continue
+          if (spawns.some(s => s.x === cx && s.y === cy)) continue
+          chestCandidates.push({ x: cx, y: cy })
+        }
+      }
+      if (chestCandidates.length > 0) {
+        const r2 = nextU32(rng)
+        rng = r2.state
+        const cp = chestCandidates[r2.value % chestCandidates.length]
+        tiles[cp.y * width + cp.x] = Tile.Chest
+      }
+    }
+  }
+
   // Pick a random floor tile (not a spawn, not stairs) for scroll placement.
   let scrollPos: Pos | null = null
   const candidates: Pos[] = []

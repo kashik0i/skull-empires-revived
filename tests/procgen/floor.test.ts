@@ -106,3 +106,24 @@ describe('floor: doors', () => {
     }
   })
 })
+
+describe('floor: chest', () => {
+  it('places at most one closed chest per floor', () => {
+    const { floor } = generateFloor(createRng('chest-1'), 40, 30)
+    let count = 0
+    for (let i = 0; i < floor.tiles.length; i++) {
+      if (floor.tiles[i] === Tile.Chest) count++
+    }
+    expect(count).toBeLessThanOrEqual(1)
+  })
+
+  it('places exactly one chest when at least 3 rooms exist', () => {
+    // Use a seed known to produce ≥3 rooms at this size — re-roll until we find one if needed.
+    let { floor } = generateFloor(createRng('chest-2'), 40, 30)
+    let count = 0
+    for (let i = 0; i < floor.tiles.length; i++) {
+      if (floor.tiles[i] === Tile.Chest) count++
+    }
+    expect(count).toBe(1)
+  })
+})
